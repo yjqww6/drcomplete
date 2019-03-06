@@ -38,7 +38,8 @@
                      (string-append
                       (path->string (path->directory-path b))
                       (path->string f)))
-                   (directory-list str))
+                   (with-handlers ([exn:fail:filesystem? (λ (e) '())])
+                     (directory-list str)))
               '())]
          [else
           (map (λ (f)
