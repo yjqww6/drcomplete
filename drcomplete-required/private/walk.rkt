@@ -2,8 +2,6 @@
 (require (for-syntax racket/base racket/syntax) syntax/kerncase racket/stxparam)
 (provide walk-module)
 
-(define-syntax-parameter phase-id (syntax-rules ()))
-
 (define-syntax (for/union stx)
   (syntax-case stx ()
     [(_ clauses body ... expr)
