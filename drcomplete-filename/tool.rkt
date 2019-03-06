@@ -46,7 +46,7 @@
            (and-let*
             ([str (check-path (get-start-position))])
             (let ([dir (get-file-dir)])
-              (if (and dir (not (absolute-path? dir)))
+              (if (and dir (not (absolute-path? str)))
                   (remove-duplicates
                    (append (parameterize ([current-directory dir])
                              (get-completions str))
