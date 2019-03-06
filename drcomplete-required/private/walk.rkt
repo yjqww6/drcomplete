@@ -16,6 +16,8 @@
 (define (sym=? a b)
   (symbol=? (syntax-e a) (syntax-e b)))
 
+(define ns (make-base-namespace))
+
 (define (walk-module fpe)
 
   (define declared-modules (mutable-set))
@@ -161,7 +163,6 @@
        (walk* #'(?form ...))
        
        (with-syntax ([(raw-specs ...) (set->list declared-modules)])
-         (define ns (make-base-namespace))
          
          (define (get-exports mod just)
            (define (filter-exports exports)
