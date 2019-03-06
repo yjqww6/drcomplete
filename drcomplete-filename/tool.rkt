@@ -4,14 +4,14 @@
 
 (require "private/main.rkt")
 
+(define-local-member-name get-dir)
+
 (define tool@
   (unit
     (import drracket:tool^)
     (export drracket:tool-exports^)
     (define phase1 void)
     (define phase2 void)
-
-    (define-local-member-name get-file-dir)
     
     (define fc-mixin
       (mixin (racket:text<%> text:autocomplete<%>) ()
@@ -38,20 +38,15 @@
             [(check-path pos) => values]
             [else (super get-word-at pos)]))
 
-        (define/public (get-file-dir)
-          #f)
+        (define/public (get-dir)
+          (current-directory))
         
         (define/override (get-all-words)
           (or
            (and-let*
             ([str (check-path (get-start-position))])
-            (let ([dir (get-file-dir)])
-              (if (and dir (not (absolute-path? str)))
-                  (remove-duplicates
-                   (append (parameterize ([current-directory dir])
-                             (get-completions str))
-                           (get-completions str)))
-                  (get-completions str))))
+            (parameterize ([current-directory (get-dir)])
+              (get-completions str)))
            (super get-all-words)))
         
         (super-new)
@@ -60,12 +55,13 @@
     (define (def-mixin %)
       (class %
         (inherit get-filename)
-        (define/override (get-file-dir)
+        (define/override (get-dir)
           (define b (box #f))
           (define p (get-filename b))
-          (and (not (unbox b)) p
-               (let-values ([(b s) (parse-path p)])
-                 b)))
+          (or (and (not (unbox b)) p
+                   (let-values ([(b s) (parse-path p)])
+                     b))
+              (super get-dir)))
         (super-new)))
     
     (drracket:get/extend:extend-definitions-text (compose def-mixin fc-mixin))
