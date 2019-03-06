@@ -2,7 +2,7 @@
 
 (require racket/string racket/match racket/format racket/port)
 
-(provide get-completions parse-path)
+(provide get-completions)
 
 (require srfi/2)
 
