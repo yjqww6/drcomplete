@@ -1,7 +1,7 @@
 #lang info
 (define collection "drcomplete-required")
-(define deps '("base" "drracket" "drracket-plugin-lib" "gui-lib" "srfi-lib" "rackunit-lib"))
-(define build-deps '())
+(define deps '("base" "drracket" "drracket-plugin-lib" "gui-lib" "srfi-lib"))
+(define build-deps '("rackunit-lib"))
 (define pkg-desc "auto complete for required identifiers")
 (define version "0.1")
 (define pkg-authors '(yjqww6))
