@@ -33,7 +33,8 @@
                     #%plain-lambda case-lambda
                     if let-values letrec-values set!
                     with-continuation-mark #%plain-app)
-      (λ (a b) (free-identifier=? a b phase 0))
+      (λ (a b) (or (free-identifier=? a b phase 0)
+                   (free-identifier=? a b)))
       [(#%expression ?expr) (walk #'?expr phase)]
       [(module _ _ (#%plain-module-begin ?module-level-form ...))
        (walk* #'(?module-level-form ...) phase)]
