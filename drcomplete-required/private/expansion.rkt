@@ -1,10 +1,11 @@
 #lang racket/base
 
-(require "main.rkt" racket/set)
+(require "walk.rkt" racket/set racket/exn)
 (provide go)
 (define (go v path src cust)
   (cond
     [(exn? v) #f]
     [else
-     (for/list ([s (in-set (ids v))])
-       (symbol->string s))]))
+     (with-handlers ([exn? (λ (e) (displayln (exn->string e)) #f)])
+       (for/list ([s (in-set (walk-module v))])
+         (symbol->string s)))]))
