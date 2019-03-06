@@ -13,20 +13,8 @@
            body ...
            (set-union s expr)))]))
 
-(define-syntax (define/phase stx)
-  (syntax-case stx ()
-    [(_ (f arg ...) body ...)
-     (with-syntax ([f/p (format-id #'f "~a/phase" (syntax-e #'f))])
-       #'(begin (define (f/p arg ... phase)
-                  (syntax-parameterize
-                      ([phase-id
-                        (syntax-rules () [(_) phase])])
-                    body ...))
-                (define-syntax-rule (f arg ...)
-                  (f/p arg ... (phase-id)))))]))
-
 (define (sym=? a b)
-  (free-identifier=? a b #f #f))
+  (symbol=? (syntax-e a) (syntax-e b)))
 
 (define (walk-module fpe)
 
@@ -143,12 +131,8 @@
 
   (define modu #'begin-for-syntax)
   
-  (define/phase (walk form)
-    (syntax-case* form (module module* #%require begin begin-for-syntax)
-      (λ (a b)
-        (or
-         (free-identifier=? a b (phase-id) 0)
-         (free-identifier=? a b)))
+  (define (walk form)
+    (kernel-syntax-case form #f
       [(module ?id ?path (#%plain-module-begin ?form ...))
        (begin
          (phaseless-spec #'?path #f)
@@ -164,17 +148,17 @@
       [(begin ?form ...)
        (walk* #'(?form ...))]
       [(begin-for-syntax ?form ...)
-       (walk*/phase #'(?form ...) (+ (phase-id) 1))]
+       (walk* #'(?form ...))]
       [_ (void)]))
 
-  (define/phase (walk* form*)
+  (define (walk* form*)
     (for-each (λ (s) (walk s)) (syntax->list form*)))
     
   (kernel-syntax-case fpe #f
     [(module ?id ?path (#%plain-module-begin ?form ...))
      (begin
        (phaseless-spec #'?path #f)
-       (walk*/phase #'(?form ...) 0)
+       (walk* #'(?form ...))
        
        (with-syntax ([(raw-specs ...) (set->list declared-modules)])
          (define ns (make-base-namespace))
