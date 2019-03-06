@@ -67,7 +67,7 @@
 
     (define rep-mixin
       (mixin (drracket:rep:text<%> get-dir<%>) ()
-        (inherit get-context run-in-evaluation-thread)
+        (inherit run-in-evaluation-thread)
         
         (define/override (get-dir)
           (or dir (current-directory)))
