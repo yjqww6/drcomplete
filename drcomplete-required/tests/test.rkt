@@ -1,8 +1,11 @@
 #lang racket
-(module+ test
-  (require (for-syntax syntax/parse) rackunit "../private/walk.rkt")
+(require "../private/walk.rkt")
+(module a racket/base
+  (define ftest #f)
+  (provide ftest))
 
-  (provide check-member)
+(module+ test
+  (require (for-syntax syntax/parse) rackunit)
 
   (define ns (make-base-namespace))
 
@@ -58,8 +61,8 @@
                    (require "../tool.rkt")
                    (require "../private/walk.rkt")
                    (require "../private/expansion.rkt")
-                   (require "test.rkt"))
-                walk-module tool@ check-member go)
+                   (require (submod "test.rkt" a)))
+                walk-module tool@ ftest)
 
 
   (check-member '(module a racket/base
