@@ -45,4 +45,5 @@
           (map (λ (f)
                  (path->string (build-path b f)))
                (filter (λ (f) (string-prefix? (path->string f) (path->string s)))
-                       (directory-list b)))])]))))
+                       (with-handlers ([exn:fail:filesystem? (λ (e) '())])
+                         (directory-list b))))])]))))
