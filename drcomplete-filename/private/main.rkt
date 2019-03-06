@@ -33,14 +33,12 @@
        (define-values (b s) (parse-path str))
        (cond
          [(not s)
-          (if (directory-exists? str)
-              (map (λ (f)
-                     (string-append
-                      (path->string (path->directory-path b))
-                      (path->string f)))
-                   (with-handlers ([exn:fail:filesystem? (λ (e) '())])
-                     (directory-list str)))
-              '())]
+          (map (λ (f)
+                 (string-append
+                  (path->string (path->directory-path b))
+                  (path->string f)))
+               (with-handlers ([exn:fail:filesystem? (λ (e) '())])
+                 (directory-list str)))]
          [else
           (map (λ (f)
                  (path->string (build-path b f)))
