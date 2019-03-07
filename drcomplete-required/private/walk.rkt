@@ -14,8 +14,6 @@
 (define (sym=? a b)
   (symbol=? (syntax-e a) (syntax-e b)))
 
-(define ns (make-base-namespace))
-
 (define (walk-module fpe)
 
   (define declared-modules (mutable-set))
@@ -172,12 +170,11 @@
                 (λ (p)
                   (list->set (map car (cdr p))))]
                [else (set)]))
-           (let-values ([(a b) (eval #`(module->exports '#,mod) ns)])
+           (let-values ([(a b) (module->exports mod)])
              (set-union (filter-exports a) (filter-exports b))))
-         
-         (eval
-          #'(module ?id ?path (#%plain-module-begin (#%require (only raw-specs) ...)))
-          ns)
+
+         (for ([mod (in-set declared-modules)])
+           ((current-module-name-resolver) mod #f #f #t))
          
          (for ([jm (in-set alls)])
            (for ([id (in-set (get-exports (cdr jm) (car jm)))])
