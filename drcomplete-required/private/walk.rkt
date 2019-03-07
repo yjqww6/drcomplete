@@ -157,40 +157,38 @@
      (begin
        (phaseless-spec #'?path #f)
        (walk* #'(?form ...))
-       
-       (with-syntax ([(raw-specs ...) (set->list declared-modules)])
          
-         (define (get-exports mod just)
-           (define (filter-exports exports)
-             (cond
-               [(not just) (for/union ([p (in-list exports)])
-                             (list->set (map car (cdr p))))]
-               [(assq just exports)
-                =>
-                (λ (p)
-                  (list->set (map car (cdr p))))]
-               [else (set)]))
-           (let-values ([(a b) (module->exports mod)])
-             (set-union (filter-exports a) (filter-exports b))))
+       (define (get-exports mod just)
+         (define (filter-exports exports)
+           (cond
+             [(not just) (for/union ([p (in-list exports)])
+                           (list->set (map car (cdr p))))]
+             [(assq just exports)
+              =>
+              (λ (p)
+                (list->set (map car (cdr p))))]
+             [else (set)]))
+         (let-values ([(a b) (module->exports mod)])
+           (set-union (filter-exports a) (filter-exports b))))
 
-         (for ([mod (in-set declared-modules)])
-           ((current-module-name-resolver) mod #f #f #t))
+       (for ([mod (in-set declared-modules)])
+         ((current-module-name-resolver) mod #f #f #t))
          
-         (for ([jm (in-set alls)])
-           (for ([id (in-set (get-exports (cdr jm) (car jm)))])
-             (set-add! ids id)))
-         (for ([jm (in-set prefixs)])
-           (for ([id (in-set (get-exports (cadr jm) (car jm)))])
-             (set-add! ids (string->symbol (string-append (symbol->string (cddr jm))
-                                                          (symbol->string id))))))
-         (for ([jm (in-set all-excepts)])
-           (define e (foldl (λ (v s) (set-remove s v)) (get-exports (cadr jm) (car jm)) (cddr jm)))
-           (for ([id (in-set e)])
-             (set-add! ids id)))
+       (for ([jm (in-set alls)])
+         (for ([id (in-set (get-exports (cdr jm) (car jm)))])
+           (set-add! ids id)))
+       (for ([jm (in-set prefixs)])
+         (for ([id (in-set (get-exports (cadr jm) (car jm)))])
+           (set-add! ids (string->symbol (string-append (symbol->string (cddr jm))
+                                                        (symbol->string id))))))
+       (for ([jm (in-set all-excepts)])
+         (define e (foldl (λ (v s) (set-remove s v)) (get-exports (cadr jm) (car jm)) (cddr jm)))
+         (for ([id (in-set e)])
+           (set-add! ids id)))
 
-         (for ([jm (in-set prefix-all-excepts)])
-           (define e (foldl (λ (v s) (set-remove s v)) (get-exports (cadr jm) (car jm)) (cdddr jm)))
-           (for ([id (in-set e)])
-             (set-add! ids (string->symbol (string-append (symbol->string (caddr jm))
-                                                          (symbol->string id))))))))])
+       (for ([jm (in-set prefix-all-excepts)])
+         (define e (foldl (λ (v s) (set-remove s v)) (get-exports (cadr jm) (car jm)) (cdddr jm)))
+         (for ([id (in-set e)])
+           (set-add! ids (string->symbol (string-append (symbol->string (caddr jm))
+                                                        (symbol->string id)))))))])
   ids)
