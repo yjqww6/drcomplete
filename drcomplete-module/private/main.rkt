@@ -12,20 +12,22 @@
             ([l (in-list
                  (with-module-reading-parameterization
                    (λ ()
-                     (call-with-input-file link read))))])
+                     (with-handlers ([exn:fail? (λ () '())])
+                       (call-with-input-file link read)))))])
     (match l
-      [(list* (or 'root 'static-root) p (or (list reg) reg))
+      [(list* (and k (or 'root 'static-root (? string?)))
+              (? path-string? p)
+              (or (list (? (or/c string? bytes? regexp? byte-regexp?)
+                           reg))
+                  (? null? reg)))
        (let ([p (simplify-path (build-path link 'up p))])
          (if (and (or (null? reg) (regexp-match? reg (version)))
                   (directory-exists? p))
-             (set-union s (list-collection-path p))
+             (if (string? k)
+                 (set-add s (cons k p))
+                 (set-union s (list-collection-path p)))
              s))]
-      [(list* k p (or (list reg) reg))
-       (let ([p (simplify-path (build-path link 'up p))])
-         (if (and (or (null? reg) (regexp-match? reg (version)))
-                  (directory-exists? p))
-             (set-add s (cons k p))
-             s))])))
+      [else s])))
 
 (define (collections)
   (define s
@@ -46,7 +48,8 @@
         [(cons (? hash? h) r)
          (for*/fold ([s (loop r)])
                     ([(k v) (in-hash h)]
-                     [p (in-list v)])
+                     [p (in-list v)]
+                     #:when (directory-exists? p))
            (if k
                (set-add s (cons (symbol->string k) p))
                (set-union s (list-collection-path p))))])))
@@ -66,7 +69,8 @@
          [(not dirs) (set)]
          [else
           (for/fold ([s (set)])
-                    ([dir (in-set dirs)])
+                    ([dir (in-set dirs)]
+                     #:when (directory-exists? dir))
             (let loop ([path^ (cons path path*)] [dir dir])
               (match path^
                 [(list p)
