@@ -1,6 +1,6 @@
 #lang info
 (define collection "drcomplete-module")
-(define deps '("base" "drracket" "drracket-plugin-lib" "gui-lib"))
+(define deps '("base" "drracket" "drracket-plugin-lib" "gui-lib" "typed-racket-lib"))
 (define build-deps '())
 (define pkg-desc "auto complete for modules")
 (define version "0.1")

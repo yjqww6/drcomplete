@@ -1,6 +1,6 @@
 #lang info
 (define collection "drcomplete-filename")
-(define deps '("base" "drracket" "drracket-plugin-lib" "gui-lib" "srfi-lib"))
+(define deps '("base" "drracket" "drracket-plugin-lib" "gui-lib" "srfi-lib" "typed-racket-lib"))
 (define build-deps '())
 (define pkg-desc "auto complete for filenames")
 (define version "0.1")
