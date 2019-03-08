@@ -40,13 +40,14 @@
 
     (define def-mixin
       (mixin (racket:text<%> text:autocomplete<%>) ()
-        (inherit get-text)
+        (inherit get-text get-word-at get-start-position)
         (super-new)
 
         (define/override (get-all-words)
           (set->list
            (set-union
-            (symbols (open-input-string (get-text)))
+            (set-remove (symbols (open-input-string (get-text)))
+                        (get-word-at (get-start-position)))
             (list->set (super get-all-words)))))))
 
     (define rep-mixin
