@@ -21,3 +21,7 @@ Or install ones independently(using subdirectory names).
 ### drcomplete-filename
 
 ![gif](https://raw.githubusercontent.com/yjqww6/filename-complete/gif/complete.gif)
+
+### drcomplete-module
+
+![default](https://user-images.githubusercontent.com/6269269/54006798-cc021100-4199-11e9-99bb-7fc25dd6d5d2.png)
