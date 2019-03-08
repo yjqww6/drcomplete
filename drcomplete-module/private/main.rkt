@@ -88,12 +88,10 @@
                        (join-str (path->string f)))]
                      [else s]))]
                 [(cons p path*)
-                 (for/fold ([s s])
-                           ([d (in-list (directory-list dir #:build? #t))]
-                            #:when (directory-exists? d))
-                   (set-union
-                    s
-                    (loop path* d)))]
+                 (define more-dir (build-path dir p))
+                 (if (directory-exists? more-dir)
+                     (loop path* more-dir)
+                     s)]
                 [else s])))]))]
     [else (set)]))
 
