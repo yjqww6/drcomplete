@@ -126,8 +126,6 @@
            (each maybe-shift #'(?raw-require-spec ...) level)))]
       [?phaseless-spec
        (phaseless-spec #'?phaseless-spec #f)]))
-
-  (define modu #'begin-for-syntax)
   
   (define (walk form)
     (kernel-syntax-case form #f
