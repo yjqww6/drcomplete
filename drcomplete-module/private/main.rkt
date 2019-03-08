@@ -86,7 +86,8 @@
                        (join-str
                         (path->string
                          (path-replace-extension f #""))))]
-                     [(directory-exists? (build-path dir f))
+                     [(and (directory-exists? (build-path dir f))
+                           (not (string=? (path->string f) "compiled")))
                       (set-add
                        s
                        (join-str (path->string f)))]
