@@ -1,63 +1,27 @@
 #lang racket
-(require syntax/modread)
-
-(define (list-collection-path path)
-  (for/set ([d (in-list (directory-list path #:build? #t))]
-            #:when (directory-exists? d))
-    (define-values (b f s) (split-path d))
-    (cons (path->string f) d)))
-
-(define (list-collection-link link)
-  (for/fold ([s (set)])
-            ([l (in-list
-                 (with-module-reading-parameterization
-                   (λ ()
-                     (with-handlers ([exn:fail? (λ () '())])
-                       (call-with-input-file link read)))))])
-    (match l
-      [(list* (and k (or 'root 'static-root (? string?)))
-              (? path-string? p)
-              (or (list (? (or/c string? bytes? regexp? byte-regexp?)
-                           reg))
-                  (? null? reg)))
-       (let ([p (simplify-path (build-path link 'up p))])
-         (if (and (or (null? reg) (regexp-match? reg (version)))
-                  (directory-exists? p))
-             (if (string? k)
-                 (set-add s (cons k p))
-                 (set-union s (list-collection-path p)))
-             s))]
-      [else s])))
+(require syntax/modread setup/link)
 
 (define (collections)
-  (define s
-    (let loop ([ls (current-library-collection-links)])
-      (match ls
-        ['() (set)]
-        [`(#f . ,r)
-         (set-union
-          (for/fold ([s (set)])
-                    ([p (in-list (current-library-collection-paths))]
-                     #:when (directory-exists? p))
-            (set-union s (list-collection-path p)))
-          (loop r))]
-        [(cons (? path? p) r)
-         (set-union
-          (list-collection-link p)
-          (loop r))]
-        [(cons (? hash? h) r)
-         (for*/fold ([s (loop r)])
-                    ([(k v) (in-hash h)]
-                     [p (in-list v)]
-                     #:when (directory-exists? p))
-           (if k
-               (set-add s (cons (symbol->string k) p))
-               (set-union s (list-collection-path p))))])))
-  (for/fold ([h (hash)])
-            ([p (in-set s)])
-    (hash-update h (car p)
-                 (λ (s) (set-add s (cdr p)))
-                 (λ () (set (cdr p))))))
+  (define h1
+    (for/fold ([h (hash)])
+              ([p (in-list (append
+                            (current-library-collection-paths)
+                            (links #:root? #t #:user? #f)
+                            (links #:root? #t #:user? #t)))]
+               #:when (directory-exists? p)
+               [d (in-list (directory-list p #:build? #t))]
+               #:when (directory-exists? d))
+      (define-values (b f s) (split-path d))
+      (define k (path->string f))
+      (define v (path->string d))
+      (hash-update h k (λ (s) (set-add s v)) (λ () (set v)))))
+  (for*/fold ([h h1])
+             ([user (in-list '(#t #f))]
+              [c+p (links #:with-path? #t #:user? user)]
+              #:when (directory-exists? (cdr c+p)))
+    (define k (car c+p))
+    (define v (path->string (cdr c+p)))
+    (hash-update h k (λ (s) (set-add s v)) (λ () (set v)))))
 
 (define (get-completions str [cols (collections)])
   (match (string-split str "/" #:trim? #f)
