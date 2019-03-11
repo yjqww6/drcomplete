@@ -27,7 +27,7 @@ Or install ones independently(using subdirectory names).
 ![default](https://user-images.githubusercontent.com/6269269/54006798-cc021100-4199-11e9-99bb-7fc25dd6d5d2.png)
 
 ## Notes
-`drcomplete-required` completes identifiers required from other files and collections, identifiers required from same file are not supported currently. It also replace the default candidates from DrRacket(which loads all symbols from manuals).
+`drcomplete-required` completes identifiers required from other files and collections, identifiers required from same file are not supported currently. It also replaces the default candidates from DrRacket(which loads all symbols from manuals).
 
 `drcomplete-user-defined` completes identifiers introduced by user in binding positions in the same file.
 
@@ -35,7 +35,7 @@ Both `drcomplete-required` and `drcomplete-user-defined` need wait for backgroun
 
 For some constantly appearing patterns like `(let (... <cursor> ...) )` which fails to be expanded, `drcomplete-user-defined` also supports appending all user-written symbols(except the one before cursor) to candidates.
 
-`drcomplete-filename` completes file paths, it use the directory of your file as current directory in definition window, and `(current-directory)` of your evaluation thread in repl.
+`drcomplete-filename` completes file paths, it use the directory of your file as current directory in definition window, and `(current-directory)` from your evaluation thread in repl.
 
 `drcomplete-module` completes module paths for installed collections.
 
