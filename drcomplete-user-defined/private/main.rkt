@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/set syntax/kerncase)
+(require racket/set)
 (provide walk)
 
 (define (walk* stxs phase)
@@ -33,13 +33,12 @@
                     #%plain-lambda case-lambda
                     if let-values letrec-values set!
                     with-continuation-mark #%plain-app)
-      (λ (a b) (or (free-identifier=? a b phase 0)
-                   (free-identifier=? a b)))
+      (λ (a b) (free-identifier=? a b phase 0))
       [(#%expression ?expr) (walk #'?expr phase)]
       [(module _ _ (#%plain-module-begin ?module-level-form ...))
-       (walk* #'(?module-level-form ...) phase)]
+       (walk* #'(?module-level-form ...) 0)]
       [(module* _ _ (#%plain-module-begin ?module-level-form ...))
-       (walk* #'(?module-level-form ...) phase)]
+       (walk* #'(?module-level-form ...) 0)]
       [(begin ?expr ...)
        (walk* #'(?expr ...) phase)]
       [(begin0 ?expr ...)
