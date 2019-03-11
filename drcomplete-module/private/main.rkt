@@ -1,5 +1,5 @@
 #lang racket
-(require syntax/modread setup/link)
+(require setup/link)
 
 (define (collections)
   (define h1
