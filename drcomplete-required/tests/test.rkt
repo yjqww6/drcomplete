@@ -21,12 +21,14 @@
       [(_ module-form (~optional (~seq #:not (e ...))
                                  #:defaults ([(e 1) '()]))
           id ...)
-       #'(check-in module-form
-                   (λ (imports) (and
-                                 (set=?
-                                  (set-intersect (set 'e ...) imports)
-                                  (set))
-                                 (subset? (set 'id ...) imports))))]))
+       (syntax/loc stx
+         (check-in module-form
+                   (λ (imports)
+                     (and
+                      (set=?
+                       (set-intersect (set 'e ...) imports)
+                       (set))
+                      (subset? (set 'id ...) imports)))))]))
 
   (check-member '(module a racket/base)
                 call/cc)
@@ -79,4 +81,20 @@
                      #`(require (rename-in racket/base [call/cc #,(syntax-local-introduce #'callcc2)])))
                    (test1)
                    (test2))
-                #:not (callcc1) callcc2))
+                #:not (callcc1) callcc2)
+
+  (check-member '(module a racket/base
+                   (require (for-syntax racket/base))
+
+                   (define-syntax (test1 stx)
+                     #`(#%require (prefix p1: racket/set)
+                                  (only racket/set set?)))
+
+                   (define-syntax (test2 stx)
+                     (define mod (syntax-local-introduce #'racket/set))
+                     #`(#%require (prefix p2: #,mod)
+                                  (only #,mod set->list)))
+
+                   (test1)
+                   (test2))
+                #:not (p1:set? set?) p2:set? set->list))

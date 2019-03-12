@@ -55,35 +55,40 @@
       (only prefix all-except prefix-all-except rename)
       sym=?
       [(only ?raw-module-path ?id ...)
-       (with-datum ([mod #'?raw-module-path]
-                    [ids #'(?id ...)])
-         (for ([id (in-list ids)])
-           (set-add! ids id)))]
+       (when (visible? #'?raw-module-path)
+         (with-datum ([mod #'?raw-module-path]
+                      [id* #'(?id ...)])
+           (for ([id (in-list id*)])
+             (set-add! ids id))))]
       [(prefix ?prefix-id ?raw-module-path)
-       (with-datum ([mod #'?raw-module-path]
-                    [pre #'?prefix-id])
-         (set-add! declared-modules mod)
-         (set-add! prefixs (list* just mod pre)))]
+       (when (visible? #'?raw-module-path)
+         (with-datum ([mod #'?raw-module-path]
+                      [pre #'?prefix-id])
+           (set-add! declared-modules mod)
+           (set-add! prefixs (list* just mod pre))))]
       [(all-except ?raw-module-path ?id ...)
-       (with-datum ([mod #'?raw-module-path]
-                    [ids #'(?id ...)])
-         (set-add! declared-modules mod)
-         (set-add! all-excepts (list* just mod ids)))]
+       (when (visible? #'?raw-module-path)
+         (with-datum ([mod #'?raw-module-path]
+                      [id* #'(?id ...)])
+           (set-add! declared-modules mod)
+           (set-add! all-excepts (list* just mod id*))))]
       [(prefix-all-except ?prefix-id ?raw-module-path ?id ...)
-       (with-datum ([mod #'?raw-module-path]
-                    [pre #'?prefix-id]
-                    [ids #'(?id ...)])
-         (set-add! declared-modules mod)
-         (set-add! prefix-all-excepts (list* just mod pre ids)))]
+       (when (visible? #'?raw-module-path)
+         (with-datum ([mod #'?raw-module-path]
+                      [pre #'?prefix-id]
+                      [id* #'(?id ...)])
+           (set-add! declared-modules mod)
+           (set-add! prefix-all-excepts (list* just mod pre id*))))]
       [(rename ?raw-module-path ?id _)
        (with-datum ([mod #'?raw-module-path]
                     [id #'?id])
          (when (visible? #'?id)
            (set-add! ids id)))]
       [?raw-module-path
-       (with-datum ([mod #'?raw-module-path])
-         (set-add! declared-modules mod)
-         (set-add! alls (cons just mod)))]))
+       (when (visible? #'?raw-module-path)
+         (with-datum ([mod #'?raw-module-path])
+           (set-add! declared-modules mod)
+           (set-add! alls (cons just mod))))]))
 
   (define (each f syn . args)
     (for ([s (in-syntax syn)])
