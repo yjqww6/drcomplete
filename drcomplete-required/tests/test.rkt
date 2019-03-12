@@ -70,4 +70,13 @@
                             (rename-in racket/control
                                        [call/prompt callp])
                             (except-in racket/exn exn->string)))
-                #:not (exn->string) g:frame% callp))
+                #:not (exn->string) g:frame% callp)
+
+  (check-member '(module a racket
+                   (define-syntax-rule (test1)
+                     (require (rename-in racket/base [call/cc callcc1])))
+                   (define-syntax (test2 stx)
+                     #`(require (rename-in racket/base [call/cc #,(syntax-local-introduce #'callcc2)])))
+                   (test1)
+                   (test2))
+                #:not (callcc1) callcc2))

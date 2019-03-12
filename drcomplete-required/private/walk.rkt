@@ -14,6 +14,12 @@
 (define (sym=? a b)
   (symbol=? (syntax-e a) (syntax-e b)))
 
+(define (visible? id)
+  (for/and ([scope (in-list
+                    (hash-ref (syntax-debug-info id)
+                              'context (λ () '())))])
+    (not (eq? 'macro (vector-ref scope 1)))))
+
 (define (walk-module fpe)
 
   (define declared-modules (mutable-set))
@@ -72,7 +78,8 @@
       [(rename ?raw-module-path ?id _)
        (with-datum ([mod #'?raw-module-path]
                     [id #'?id])
-         (set-add! ids id))]
+         (when (visible? #'?id)
+           (set-add! ids id)))]
       [?raw-module-path
        (with-datum ([mod #'?raw-module-path])
          (set-add! declared-modules mod)
