@@ -81,4 +81,10 @@
                            (define-syntax a (syntax-rules ()))
                            (f (λ (y) y))))))))
               f a x y)
+
+  (check-same '(module a racket/base
+                 (case-lambda
+                   [(a) #f]
+                   [(b . c) #f]))
+              a b c)
   )

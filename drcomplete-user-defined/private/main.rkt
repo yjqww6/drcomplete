@@ -1,5 +1,5 @@
 #lang racket/base
-(require racket/set)
+(require racket/set syntax/kerncase)
 (provide walk)
 
 (define (walk* stxs phase)
@@ -27,18 +27,14 @@
 
 (define (walk stx [phase 0])
   (define ret
-    (syntax-case* stx
-      (#%expression module module* begin begin0 begin-for-syntax
-                    define-values define-syntaxes
-                    #%plain-lambda case-lambda
-                    if let-values letrec-values set!
-                    with-continuation-mark #%plain-app)
-      (λ (a b) (free-identifier=? a b phase 0))
+    (kernel-syntax-case/phase stx phase
       [(#%expression ?expr) (walk #'?expr phase)]
-      [(module _ _ (#%plain-module-begin ?module-level-form ...))
-       (walk* #'(?module-level-form ...) 0)]
-      [(module* _ _ (#%plain-module-begin ?module-level-form ...))
-       (walk* #'(?module-level-form ...) 0)]
+      [(#%plain-module-begin ?module-level-form ...)
+       (walk* #'(?module-level-form ...))]
+      [(module _ _ ?plain)
+       (walk* #'?plain 0)]
+      [(module* _ _ ?plain)
+       (walk* #'?plain 0)]
       [(begin ?expr ...)
        (walk* #'(?expr ...) phase)]
       [(begin0 ?expr ...)
@@ -52,13 +48,7 @@
       [(#%plain-lambda ?formals ?expr ...)
        (set-union (visible #'?formals) (walk* #'(?expr ...) phase))]
       [(case-lambda (?formals ?expr ...) ...)
-       (let loop ([formals (syntax->list #'(?formals ...))]
-                  [set (walk* #'(?expr ... ...) phase)])
-         (cond
-           [(null? formals) set]
-           [else (loop (cdr formals)
-                       (set-union (visible (car formals))
-                                  set))]))]
+       (set-union (visible #'(?formals ...)) (walk* #'(?expr ... ...) phase))]
       [(if ?expr ...)
        (walk* #'(?expr ...) phase)]
       [(let-values ([(?id ...) ?expr] ...)
@@ -75,7 +65,7 @@
        (walk* #'(?expr ...) phase)]
       [(#%plain-app ?expr ...)
        (walk* #'(?expr ...) phase)]
-      [_  (seteq)]))
+      [_ (seteq)]))
   
   (cond
     [(syntax-property stx 'disappeared-binding)
