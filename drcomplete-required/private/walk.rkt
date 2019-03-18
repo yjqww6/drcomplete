@@ -1,5 +1,6 @@
-#lang racket
-(require (for-syntax racket/base racket/syntax) syntax/kerncase racket/stxparam)
+#lang racket/base
+(require racket/bool racket/set racket/sequence
+         (for-syntax racket/base) syntax/kerncase)
 (provide walk-module)
 
 (define-syntax (for/union stx)
