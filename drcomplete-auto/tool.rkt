@@ -7,11 +7,12 @@
     (import drracket:tool^)
     (export drracket:tool-exports^)
     (define phase1 void)
-    (define phase2 (thunk
-                    (preferences:set-default 'drcomplete:auto-completion
-                                             #t
-                                             boolean?
-                                             )))
+    (define phase2
+      (thunk
+       (preferences:set-default
+        'drcomplete:auto-completion
+        #t
+        boolean?)))
 
     (define auto-mixin
       (mixin (racket:text<%> text:autocomplete<%>) ()
@@ -30,7 +31,14 @@
                        [#\/ (try-complete/)]
                        [_ #f]))
             (auto-complete)))
-        (define (try-complete)
+
+
+        (define/augment (after-insert start len)
+          (when (= start cached-pos)
+            (set! cached-pos -1))
+          (inner (void) after-insert start len))
+        
+        (define/private (try-complete)
           (define start-pos (get-start-position))
           (let ([sexp-pos (get-backward-sexp start-pos)])
             (and sexp-pos
@@ -41,17 +49,15 @@
                         (not (string-prefix? str "\""))
                         (not (string-prefix? str "#\""))
                         ))
-                 (set! cached-pos sexp-pos)
-                 )))
-        (define (try-complete/)
+                 (set! cached-pos sexp-pos))))
+        
+        (define/private (try-complete/)
           (let* ([start-pos (get-start-position)]
-                 [sexp-pos (get-backward-sexp start-pos)]
-                 )
+                 [sexp-pos (get-backward-sexp start-pos)])
             (and sexp-pos
                  (= sexp-pos cached-pos))))
-                 
-
-        (super-new)            
+        
+        (super-new)
                 
         ))
 
@@ -59,17 +65,22 @@
       (mixin (frame:standard-menus<%>) ()
         (super-new)
         (inherit edit-menu:after-preferences get-edit-menu)
-        (define switch (new menu-item% [label ""][parent (get-edit-menu)]
-                            [callback (λ (c e)
-                                        (preferences:set 'drcomplete:auto-completion
-                                                         (not
-                                                          (preferences:get 'drcomplete:auto-completion))))]
-                            [demand-callback (λ (c)
-                                               (send switch set-label
-                                                     (if (preferences:get 'drcomplete:auto-completion)
-                                                         "Disable AutoCompletion"
-                                                         "Enable AutoCompletion")))]))
+        (define switch
+          (new menu-item% [label ""] [parent (get-edit-menu)]
+               [callback
+                (λ (c e)
+                  (preferences:set
+                   'drcomplete:auto-completion
+                   (not
+                    (preferences:get 'drcomplete:auto-completion))))]
+               [demand-callback
+                (λ (c)
+                  (send switch set-label
+                        (if (preferences:get 'drcomplete:auto-completion)
+                            "Disable Automatic AutoCompletion"
+                            "Enable Automatic AutoCompletion")))]))
         (edit-menu:after-preferences switch)))
+    
     (drracket:get/extend:extend-definitions-text auto-mixin #f)
     (drracket:get/extend:extend-interactions-text auto-mixin #f)
     (drracket:get/extend:extend-unit-frame frame-mixin #f)
