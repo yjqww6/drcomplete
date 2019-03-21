@@ -1,0 +1,6 @@
+#lang info
+(define name "drcomplete-gui-class")
+(define version "1.0")
+(define collection "drcomplete-gui-class")
+(define deps (quote ("base" "gui-lib")))
+(define build-deps (quote ()))
