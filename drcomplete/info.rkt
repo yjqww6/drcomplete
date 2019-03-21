@@ -1,8 +1,7 @@
 #lang info
 (define collection 'multi)
 
-(define deps '("drcomplete-filename" "drcomplete-required" "drcomplete-user-defined" "drcomplete-module"
-                                     ))
+(define deps '("drcomplete-filename" "drcomplete-required" "drcomplete-user-defined" "drcomplete-module" "drcomplete-auto"))
 
 (define pkg-desc "The package assembles drcomplete plugins")
 
