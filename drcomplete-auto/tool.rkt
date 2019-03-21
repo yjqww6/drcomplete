@@ -54,6 +54,7 @@
                         (not (string-prefix? str "'"))
                         (not (string-prefix? str "\""))
                         (not (string-prefix? str "#\""))
+                        (not (string-prefix? str "#:"))
                         ))
                  (set! soft-cached-pos sexp-pos)
                  (set! cached-pos sexp-pos))))
