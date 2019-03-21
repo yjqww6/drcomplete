@@ -7,7 +7,11 @@
     (import drracket:tool^)
     (export drracket:tool-exports^)
     (define phase1 void)
-    (define phase2 void)
+    (define phase2 (thunk
+                    (preferences:set-default 'drcomplete:auto-completion
+                                             #t
+                                             boolean?
+                                             )))
 
     (define auto-mixin
       (mixin (racket:text<%> text:autocomplete<%>) ()
@@ -17,11 +21,12 @@
               
         (define/override (on-char event)
           (super on-char event)
-          (when (and (not (send event get-alt-down))
+          (when (and (preferences:get 'drcomplete:auto-completion)
+                     (not (send event get-alt-down))
                      (not (send event get-control-down))
                      (match (send event get-key-code)
                        [(and (? char?) (? char-alphabetic?)) (try-complete)]
-                       [#\- (try-complete)]
+                       [(or #\- #\:) (try-complete)]
                        [#\/ (try-complete/)]
                        [_ #f]))
             (auto-complete)))
@@ -46,9 +51,26 @@
                  (= sexp-pos cached-pos))))
                  
 
-            (super-new)            
+        (super-new)            
                 
         ))
+
+    (define frame-mixin
+      (mixin (frame:standard-menus<%>) ()
+        (super-new)
+        (inherit edit-menu:after-preferences get-edit-menu)
+        (define switch (new menu-item% [label ""][parent (get-edit-menu)]
+                            [callback (λ (c e)
+                                        (preferences:set 'drcomplete:auto-completion
+                                                         (not
+                                                          (preferences:get 'drcomplete:auto-completion))))]
+                            [demand-callback (λ (c)
+                                               (send switch set-label
+                                                     (if (preferences:get 'drcomplete:auto-completion)
+                                                         "Disable AutoCompletion"
+                                                         "Enable AutoCompletion")))]))
+        (edit-menu:after-preferences switch)))
     (drracket:get/extend:extend-definitions-text auto-mixin #f)
     (drracket:get/extend:extend-interactions-text auto-mixin #f)
+    (drracket:get/extend:extend-unit-frame frame-mixin #f)
     ))
