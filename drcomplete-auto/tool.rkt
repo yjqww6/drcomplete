@@ -17,7 +17,9 @@
     (define auto-mixin
       (mixin (racket:text<%> text:autocomplete<%>) ()
         (inherit auto-complete get-start-position get-end-position
-                 get-backward-sexp get-text)
+                 get-backward-sexp get-forward-sexp get-text)
+
+        (define soft-cached-pos -1)
         (define cached-pos -1)
               
         (define/override (on-char event)
@@ -32,7 +34,6 @@
                        [_ #f]))
             (auto-complete)))
 
-
         (define/augment (after-insert start len)
           (when (= start cached-pos)
             (set! cached-pos -1))
@@ -43,19 +44,25 @@
           (let ([sexp-pos (get-backward-sexp start-pos)])
             (and sexp-pos
                  (not (= sexp-pos cached-pos))
+                 
+                 ;inside comment
+                 (let ([next-pos (get-forward-sexp sexp-pos)])
+                   (and next-pos (<= start-pos next-pos)))
+                 
                  (let ([str (get-text sexp-pos start-pos)])
                    (and (not (< (string-length str) 3))
                         (not (string-prefix? str "'"))
                         (not (string-prefix? str "\""))
                         (not (string-prefix? str "#\""))
                         ))
+                 (set! soft-cached-pos sexp-pos)
                  (set! cached-pos sexp-pos))))
         
         (define/private (try-complete/)
           (let* ([start-pos (get-start-position)]
                  [sexp-pos (get-backward-sexp start-pos)])
             (and sexp-pos
-                 (= sexp-pos cached-pos))))
+                 (= sexp-pos soft-cached-pos))))
         
         (super-new)
                 
