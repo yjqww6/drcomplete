@@ -1,5 +1,6 @@
 #lang racket
 (require drracket/tool racket/gui framework)
+(require racket/unsafe/ops)
 (provide tool@)
 
 (define tool@
@@ -18,7 +19,21 @@
       (mixin (racket:text<%> text:autocomplete<%>) ()
         (inherit auto-complete get-start-position get-end-position
                  get-backward-sexp get-forward-sexp get-text)
-
+        
+        (define (need-completion? str)
+          (let ([char1 (unsafe-string-ref str 0)]
+                [char2 (unsafe-string-ref str 1)])
+            (cond [(char=? char1 #\') #t] ;;quote
+                  [(char=? char1 #\`) #t] ;;quasiquote
+                  [(char=? char1 #\") #t] ;;string
+                  [(char=? char1 #\#)
+                   (or (char=? char2 #\')
+                       (char=? char2 #\`)
+                       (char=? char2 #\,)
+                       ) ;;byte string, keyword
+                   ;;regexp,numbers ... except #' #` #, #,@
+                   ])))
+        
         (define soft-cached-pos -1)
         (define cached-pos -1)
               
@@ -28,10 +43,10 @@
                      (not (send event get-alt-down))
                      (not (send event get-control-down)))
             (match (send event get-key-code)
-              [(or (and (? char?) (? char-alphabetic?)) #\- #\:)
+              [(or (and (? char?) (? char-alphabetic?)) #\-)
                (when (try-complete)
                  (auto-complete))]
-              [#\/
+              [(or #\/ #\:)
                (when (try-complete/)
                  (super on-char (new key-event%))
                  (auto-complete))]
@@ -57,11 +72,8 @@
                    (and next-pos (<= start-pos next-pos)))
                  
                  (let ([str (get-text sexp-pos start-pos)])
-                   (and (not (< (string-length str) 3))
-                        (not (string-prefix? str "'"))
-                        (not (string-prefix? str "\""))
-                        (not (string-prefix? str "#\""))
-                        (not (string-prefix? str "#:"))
+                   (and (>= (string-length str) 3)
+                        (need-completion? str)
                         ))
                  (set! soft-cached-pos sexp-pos)
                  (set! cached-pos sexp-pos))))
