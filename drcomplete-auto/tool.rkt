@@ -18,17 +18,30 @@
       (mixin (racket:text<%> text:autocomplete<%>) ()
         (inherit auto-complete get-start-position get-end-position
                  get-backward-sexp get-forward-sexp get-text)
-
+        
+        (define (need-completion? str)
+          (and (>= (string-length str) 3)
+               (match* ((string-ref str 0)(string-ref str 1))
+                 [((or #\' #\" #\`) _) #f]
+                 [(#\# (or #\' #\` #\, #\%)) #t]
+                 [(#\# _) #f]
+                 [(_ _) #t])))
+        
         (define soft-cached-pos -1)
         (define cached-pos -1)
               
         (define/override (on-char event)
-          (super on-char event)
+          (when (match (send event get-key-code)
+                  [(or 'shift 'rshift) #f]
+                  [_ #t]
+                  )
+            (super on-char event))
           (when (and (preferences:get 'drcomplete:auto-completion)
                      (not (send event get-alt-down))
                      (not (send event get-control-down)))
             (match (send event get-key-code)
-              [(or (and (? char?) (? char-alphabetic?)) #\- #\:)
+              [(or (and (? char?) (? char-alphabetic?)) #\- #\: #\+
+                   #\*)
                (when (try-complete)
                  (auto-complete))]
               [#\/
@@ -56,13 +69,8 @@
                  (let ([next-pos (get-forward-sexp sexp-pos)])
                    (and next-pos (<= start-pos next-pos)))
                  
-                 (let ([str (get-text sexp-pos start-pos)])
-                   (and (not (< (string-length str) 3))
-                        (not (string-prefix? str "'"))
-                        (not (string-prefix? str "\""))
-                        (not (string-prefix? str "#\""))
-                        (not (string-prefix? str "#:"))
-                        ))
+                 (need-completion? (get-text sexp-pos start-pos))
+                        
                  (set! soft-cached-pos sexp-pos)
                  (set! cached-pos sexp-pos))))
         
