@@ -1,6 +1,5 @@
 #lang racket
 (require drracket/tool racket/gui framework)
-(require racket/unsafe/ops)
 (provide tool@)
 
 (define tool@
@@ -21,32 +20,30 @@
                  get-backward-sexp get-forward-sexp get-text)
         
         (define (need-completion? str)
-          (let ([char1 (unsafe-string-ref str 0)]
-                [char2 (unsafe-string-ref str 1)])
-            (cond [(char=? char1 #\') #t] ;;quote
-                  [(char=? char1 #\`) #t] ;;quasiquote
-                  [(char=? char1 #\") #t] ;;string
-                  [(char=? char1 #\#)
-                   (or (char=? char2 #\')
-                       (char=? char2 #\`)
-                       (char=? char2 #\,)
-                       ) ;;byte string, keyword
-                   ;;regexp,numbers ... except #' #` #, #,@
-                   ])))
+          (match* ((string-ref str 0)(string-ref str 1))
+            [((or #\' #\" #\`) _) #f]
+            [(#\# (or #\' #\` #\, #\%)) #t]
+            [(#\# _) #f]
+            [(_ _) #t]))
         
         (define soft-cached-pos -1)
         (define cached-pos -1)
               
         (define/override (on-char event)
-          (super on-char event)
+          (when (match (send event get-key-code)
+                  [(or 'lshift 'rshift) #f]
+                  [_ #t]
+                  )
+              (super on-char event))
           (when (and (preferences:get 'drcomplete:auto-completion)
                      (not (send event get-alt-down))
                      (not (send event get-control-down)))
             (match (send event get-key-code)
-              [(or (and (? char?) (? char-alphabetic?)) #\-)
+              [(or (and (? char?) (? char-alphabetic?)) #\- #\: #\+ #\-
+                   #\*)
                (when (try-complete)
                  (auto-complete))]
-              [(or #\/ #\:)
+              [#\/
                (when (try-complete/)
                  (super on-char (new key-event%))
                  (auto-complete))]
