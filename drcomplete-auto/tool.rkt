@@ -20,11 +20,12 @@
                  get-backward-sexp get-forward-sexp get-text)
         
         (define (need-completion? str)
-          (match* ((string-ref str 0)(string-ref str 1))
-            [((or #\' #\" #\`) _) #f]
-            [(#\# (or #\' #\` #\, #\%)) #t]
-            [(#\# _) #f]
-            [(_ _) #t]))
+          (and (>= (string-length str) 3)
+               (match* ((string-ref str 0)(string-ref str 1))
+                 [((or #\' #\" #\`) _) #f]
+                 [(#\# (or #\' #\` #\, #\%)) #t]
+                 [(#\# _) #f]
+                 [(_ _) #t])))
         
         (define soft-cached-pos -1)
         (define cached-pos -1)
@@ -34,12 +35,12 @@
                   [(or 'lshift 'rshift) #f]
                   [_ #t]
                   )
-              (super on-char event))
+            (super on-char event))
           (when (and (preferences:get 'drcomplete:auto-completion)
                      (not (send event get-alt-down))
                      (not (send event get-control-down)))
             (match (send event get-key-code)
-              [(or (and (? char?) (? char-alphabetic?)) #\- #\: #\+ #\-
+              [(or (and (? char?) (? char-alphabetic?)) #\- #\: #\+
                    #\*)
                (when (try-complete)
                  (auto-complete))]
@@ -69,9 +70,8 @@
                    (and next-pos (<= start-pos next-pos)))
                  
                  (let ([str (get-text sexp-pos start-pos)])
-                   (and (>= (string-length str) 3)
                         (need-completion? str)
-                        ))
+                        )
                  (set! soft-cached-pos sexp-pos)
                  (set! cached-pos sexp-pos))))
         
