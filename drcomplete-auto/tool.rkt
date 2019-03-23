@@ -26,13 +26,20 @@
           (super on-char event)
           (when (and (preferences:get 'drcomplete:auto-completion)
                      (not (send event get-alt-down))
-                     (not (send event get-control-down))
-                     (match (send event get-key-code)
-                       [(and (? char?) (? char-alphabetic?)) (try-complete)]
-                       [(or #\- #\:) (try-complete)]
-                       [#\/ (try-complete/)]
-                       [_ #f]))
-            (auto-complete)))
+                     (not (send event get-control-down)))
+            (match (send event get-key-code)
+              [(or (and (? char?) (? char-alphabetic?)) #\- #\:)
+               (when (try-complete)
+                 (auto-complete))]
+              [#\/
+               (when (try-complete/)
+                 (super on-char (new key-event%))
+                 (auto-complete))]
+              [_ (void)])))
+
+        (define/augment (after-set-position)
+          (super on-char (new key-event%))
+          (inner (void) after-set-position))
 
         (define/augment (after-insert start len)
           (when (= start cached-pos)
