@@ -69,9 +69,8 @@
                  (let ([next-pos (get-forward-sexp sexp-pos)])
                    (and next-pos (<= start-pos next-pos)))
                  
-                 (let ([str (get-text sexp-pos start-pos)])
-                        (need-completion? str)
-                        )
+                 (need-completion? (get-text sexp-pos start-pos))
+                        
                  (set! soft-cached-pos sexp-pos)
                  (set! cached-pos sexp-pos))))
         
