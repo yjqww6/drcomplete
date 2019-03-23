@@ -32,7 +32,7 @@
               
         (define/override (on-char event)
           (when (match (send event get-key-code)
-                  [(or 'lshift 'rshift) #f]
+                  [(or 'shift 'rshift) #f]
                   [_ #t]
                   )
             (super on-char event))
