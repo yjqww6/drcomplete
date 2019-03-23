@@ -40,3 +40,6 @@ For some constantly appearing patterns like `(let (... <cursor> ...) )` which fa
 `drcomplete-module` completes module paths for installed collections.
 
 For `drcomplete-filename` and `drcomplete-module`, you would need to re-triger autocompletion after entering `/`(or `\` for file paths on Windows) to go inside subdirectories.
+
+`drcomplete-auto` enables automatic triggering of autocompletion, you can enable/disable it in `Edit|Enable/Disable Automatic AutoCompletion`. (contributed by @Syntacticlosure)
+
