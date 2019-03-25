@@ -4,16 +4,14 @@
 (provide tool@)
 
 (define (symbols in)
-  (define s (set))
-  (let loop ([mode #f])
+  (let loop ([mode #f] [s (set)])
     (define-values (str type _1 _2 _3 _4 new-mode)
       (module-lexer in 0 mode))
     (cond
       [(eof-object? str) s]
       [(eq? type 'symbol)
-       (set! s (set-add s str))
-       (loop new-mode)]
-      [else (loop new-mode)])))
+       (loop new-mode (set-add s str))]
+      [else (loop new-mode s)])))
 
 (define-runtime-path expansion.rkt "private/expansion.rkt")
 
