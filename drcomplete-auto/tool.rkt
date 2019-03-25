@@ -38,7 +38,8 @@
             (super on-char event))
           (when (and (preferences:get 'drcomplete:auto-completion)
                      (not (send event get-alt-down))
-                     (not (send event get-control-down)))
+                     (not (send event get-control-down))
+                     (not (send event get-meta-down)))
             (match (send event get-key-code)
               [(or (and (? char?) (? char-alphabetic?)) #\- #\: #\+
                    #\*)
