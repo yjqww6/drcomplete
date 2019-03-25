@@ -29,13 +29,16 @@
         
         (define soft-cached-pos -1)
         (define cached-pos -1)
-              
+        (define on-char? #f)
+        
         (define/override (on-char event)
           (when (match (send event get-key-code)
                   [(or 'shift 'rshift) #f]
-                  [_ #t]
-                  )
-            (super on-char event))
+                  [_ #t])
+            (dynamic-wind
+             (λ () (set! on-char? #t))
+             (λ () (super on-char event))
+             (λ () (set! on-char? #f))))
           (when (and (preferences:get 'drcomplete:auto-completion)
                      (not (send event get-alt-down))
                      (not (send event get-control-down))
@@ -52,7 +55,8 @@
               [_ (void)])))
 
         (define/augment (after-set-position)
-          (super on-char (new key-event%))
+          (when (not on-char?)
+            (super on-char (new key-event%)))
           (inner (void) after-set-position))
 
         (define/augment (after-insert start len)
