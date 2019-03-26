@@ -6,6 +6,11 @@
   (cond
     [(exn? v) #f]
     [else
-     (with-handlers ([exn? (λ (e) (displayln (exn->string e)) #f)])
+     (with-handlers ([exn?
+                      (λ (e)
+                        (log-message
+                         (current-logger) 'error 'drcomplete
+                         (exn->string e) (current-continuation-marks))
+                        #f)])
        (for/list ([s (in-set (walk-module v))])
          (symbol->string s)))]))
