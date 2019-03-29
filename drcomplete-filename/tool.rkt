@@ -35,19 +35,19 @@
           (cond
             [(check-path pos) => values]
             [else (super get-word-at pos)]))
-
-        (define/public (get-dir)
+        
+        (define/public (drcomplete:get-dir)
           (current-directory))
 
-        (define/public (path-completions [pos (get-start-position)])
+        (define/public (drcomplete:path-completions [pos (get-start-position)])
           (and-let*
            ([str (check-path pos)])
-           (parameterize ([current-directory (get-dir)])
+           (parameterize ([current-directory (drcomplete:get-dir)])
              (get-completions str))))
         
         (define/override (get-all-words)
           (or
-           (path-completions (get-start-position))
+           (drcomplete:path-completions (get-start-position))
            (super get-all-words)))
         
         (super-new)
@@ -56,7 +56,7 @@
     (define def-mixin
       (mixin (drracket:unit:definitions-text<%> get-dir<%>) ()
         (inherit get-tab)
-        (define/override (get-dir)
+        (define/override (drcomplete:get-dir)
           (or
            (let ([t (get-tab)])
              (send t get-directory))
@@ -67,7 +67,7 @@
       (mixin (drracket:rep:text<%> get-dir<%>) ()
         (inherit run-in-evaluation-thread)
         
-        (define/override (get-dir)
+        (define/override (drcomplete:get-dir)
           (or dir (current-directory)))
 
         (define dir #f)
