@@ -15,7 +15,7 @@
       (mixin (racket:text<%> text:autocomplete<%>) (get-dir<%>)
         (inherit get-text get-backward-sexp get-start-position)
 
-        (define/public-final (check-path pos)
+        (define/private (check-path pos)
           (and-let*
            ([start (get-backward-sexp pos)]
             [str (get-text start pos)]
@@ -38,13 +38,16 @@
 
         (define/public (get-dir)
           (current-directory))
+
+        (define/public (path-completions pos)
+          (and-let*
+           ([str (check-path (get-start-position))])
+           (parameterize ([current-directory (get-dir)])
+             (get-completions str))))
         
         (define/override (get-all-words)
           (or
-           (and-let*
-            ([str (check-path (get-start-position))])
-            (parameterize ([current-directory (get-dir)])
-              (get-completions str)))
+           (path-completions (get-start-position))
            (super get-all-words)))
         
         (super-new)
