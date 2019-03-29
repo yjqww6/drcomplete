@@ -2,9 +2,7 @@
 (require drracket/tool racket/gui framework srfi/2)
 (provide tool@)
 
-(require "private/main.rkt")
-
-(define-local-member-name get-dir)
+(require "private/main.rkt" "interface.rkt")
 
 (define tool@
   (unit
@@ -12,15 +10,12 @@
     (export drracket:tool-exports^)
     (define phase1 void)
     (define phase2 void)
-
-    (define get-dir<%>
-      (interface () get-dir))
     
     (define fc-mixin
       (mixin (racket:text<%> text:autocomplete<%>) (get-dir<%>)
         (inherit get-text get-backward-sexp get-start-position)
 
-        (define/private (check-path pos)
+        (define/public-final (check-path pos)
           (and-let*
            ([start (get-backward-sexp pos)]
             [str (get-text start pos)]

@@ -39,6 +39,12 @@
                   (path->string f)))
                (with-handlers ([exn:fail:filesystem? (λ (e) '())])
                  (directory-list str)))]
+         [(= (length (explode-path str)) 1)
+          (filter
+           (λ (f) (string-prefix? f str))
+           (map path->string
+                (with-handlers ([exn:fail:filesystem? (λ (e) '())])
+                  (directory-list))))]
          [else
           (map (λ (f)
                  (path->string (build-path b f)))
