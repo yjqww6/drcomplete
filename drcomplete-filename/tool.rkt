@@ -39,9 +39,9 @@
         (define/public (get-dir)
           (current-directory))
 
-        (define/public (path-completions pos)
+        (define/public (path-completions [pos (get-start-position)])
           (and-let*
-           ([str (check-path (get-start-position))])
+           ([str (check-path pos)])
            (parameterize ([current-directory (get-dir)])
              (get-completions str))))
         
