@@ -17,21 +17,37 @@
     (define auto-mixin
       (mixin (racket:text<%> text:autocomplete<%>) ()
         (inherit auto-complete get-start-position get-end-position
-                 get-backward-sexp get-forward-sexp get-text)
-        
-        (define (need-completion? str)
-          (and (>= (string-length str) 3)
-               (match* ((string-ref str 0)(string-ref str 1))
-                 [((or #\' #\" #\`) _) #f]
-                 [(#\# (or #\' #\` #\, #\%)) #t]
-                 [(#\# _) #f]
-                 [(_ _) #t])))
-        
+                 get-backward-sexp get-forward-sexp get-text
+                 get-word-at)
+
         (define soft-cached-pos -1)
         (define cached-pos -1)
         (define on-char? #f)
+
+        (define thunk #f)
+        (define ts 0)
+
+        (define thr
+          (thread
+           (λ ()
+             (with-handlers ([exn:break? void])
+               (let loop ()
+                 (sleep 0.1)
+                 (when (and thunk
+                            (= (car thunk) ts)
+                            (> (- (current-milliseconds) ts) 0.6))
+                   (queue-callback (cdr thunk))
+                   (set! thunk #f)
+                   (sleep 0.6))
+                 (loop))))))
+
+        (define/augment (on-close)
+          (break-thread thr)
+          (inner (void) on-close))
         
         (define/override (on-char event)
+          (define t (current-milliseconds))
+          (set! ts t)
           (when (match (send event get-key-code)
                   [(or 'shift 'rshift) #f]
                   [_ #t])
@@ -46,13 +62,18 @@
             (match (send event get-key-code)
               [(or (and (? char?) (? char-alphabetic?)) #\- #\: #\+
                    #\*)
-               (when (try-complete)
-                 (auto-complete))]
+               (set! thunk
+                     (list*
+                      t
+                      (λ ()
+                        (when (and (= t ts) (try-complete))
+                          (auto-complete)))))]
               [#\/
+               (set! thunk #f)
                (when (try-complete/)
                  (super on-char (new key-event%))
                  (auto-complete))]
-              [_ (void)])))
+              [_ (set! thunk #f)])))
 
         (define/augment (after-set-position)
           (when (not on-char?)
@@ -66,24 +87,19 @@
         
         (define/private (try-complete)
           (define start-pos (get-start-position))
-          (let ([sexp-pos (get-backward-sexp start-pos)])
-            (and sexp-pos
-                 (not (= sexp-pos cached-pos))
-                 
-                 ;inside comment
-                 (let ([next-pos (get-forward-sexp sexp-pos)])
-                   (and next-pos (<= start-pos next-pos)))
-                 
-                 (need-completion? (get-text sexp-pos start-pos))
-                        
-                 (set! soft-cached-pos sexp-pos)
-                 (set! cached-pos sexp-pos))))
+          (define word (get-word-at start-pos))
+          (define word-pos (max 0 (- start-pos (string-length word))))
+          (and (not (= word-pos cached-pos))
+               (not (string=? "\"" (get-text (max 0 (- word-pos 1)) word-pos)))
+               (>= (string-length word) 3)
+               (set! soft-cached-pos word-pos)
+               (set! cached-pos word-pos)))
         
         (define/private (try-complete/)
           (let* ([start-pos (get-start-position)]
-                 [sexp-pos (get-backward-sexp start-pos)])
-            (and sexp-pos
-                 (= sexp-pos soft-cached-pos))))
+                 [word (get-word-at start-pos)]
+                 [word-pos (- start-pos (string-length word))])
+            (= word-pos soft-cached-pos)))
         
         (super-new)
                 
