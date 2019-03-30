@@ -35,10 +35,10 @@
                  (sleep 0.1)
                  (when (and thunk
                             (= (car thunk) ts)
-                            (> (- (current-milliseconds) ts) 0.4))
+                            (> (- (current-milliseconds) ts) 0.6))
                    (queue-callback (cdr thunk))
                    (set! thunk #f)
-                   (sleep 0.4))
+                   (sleep 0.6))
                  (loop))))))
 
         (define/augment (on-close)
