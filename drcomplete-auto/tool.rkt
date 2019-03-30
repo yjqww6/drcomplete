@@ -30,13 +30,13 @@
         (define thr
           (thread
            (λ ()
-             (let loop ()
-               (sleep 0.2)
-               (when thunk
-                 (queue-callback thunk)
-                 (set! thunk #f))
-               (loop)
-               ))))
+             (with-handlers ([exn:break? void])
+               (let loop ()
+                 (sleep 0.2)
+                 (when thunk
+                   (queue-callback thunk)
+                   (set! thunk #f))
+                 (loop))))))
 
         (define/augment (on-close)
           (break-thread thr)
