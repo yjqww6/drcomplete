@@ -17,12 +17,27 @@
     (define auto-mixin
       (mixin (racket:text<%> text:autocomplete<%>) ()
         (inherit auto-complete get-start-position get-end-position
-                 get-backward-sexp get-forward-sexp get-text)
+                 get-backward-sexp get-forward-sexp get-text
+                 find-up-sexp)
+
+        (define (in-require-form? init-pos)
+          (let loop ([last-pos init-pos])
+            (define current-pos (get-backward-sexp last-pos))
+            (if current-pos
+                (loop current-pos)
+                (or (string=? (get-text last-pos (+ last-pos 7))
+                              "require")
+                    (let ([up-sexp-pos (find-up-sexp last-pos)])
+                      (and up-sexp-pos (in-require-form? up-sexp-pos)))
+                    )
+                )))
         
-        (define (need-completion? str)
+        (define (need-completion? str sexp-pos)
           (and (>= (string-length str) 3)
                (match* ((string-ref str 0)(string-ref str 1))
-                 [((or #\' #\" #\`) _) #f]
+                 [(#\" _) (and (in-require-form? sexp-pos)
+                               (not (null? (send this drcomplete:path-completions))))]
+                 [((or #\' #\`) _) #f]
                  [(#\# (or #\' #\` #\, #\%)) #t]
                  [(#\# _) #f]
                  [(_ _) #t])))
@@ -74,10 +89,11 @@
                  (let ([next-pos (get-forward-sexp sexp-pos)])
                    (and next-pos (<= start-pos next-pos)))
                  
-                 (need-completion? (get-text sexp-pos start-pos))
+                 (need-completion? (get-text sexp-pos start-pos) sexp-pos)
                         
                  (set! soft-cached-pos sexp-pos)
                  (set! cached-pos sexp-pos))))
+
         
         (define/private (try-complete/)
           (let* ([start-pos (get-start-position)]
