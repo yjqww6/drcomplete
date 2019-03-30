@@ -32,10 +32,13 @@
            (λ ()
              (with-handlers ([exn:break? void])
                (let loop ()
-                 (sleep 0.2)
-                 (when thunk
-                   (queue-callback thunk)
-                   (set! thunk #f))
+                 (sleep 0.1)
+                 (when (and thunk
+                            (= (car thunk) ts)
+                            (> (- (current-milliseconds) ts) 0.4))
+                   (queue-callback (cdr thunk))
+                   (set! thunk #f)
+                   (sleep 0.4))
                  (loop))))))
 
         (define/augment (on-close)
@@ -60,15 +63,19 @@
               [(or (and (? char?) (? char-alphabetic?)) #\- #\: #\+
                    #\*)
                (set! thunk
-                     (λ ()
-                       (when (and (= t ts) (try-complete))
-                         (auto-complete))))]
+                     (cons
+                      t
+                      (λ ()
+                        (when (and (= t ts) (try-complete))
+                          (auto-complete)))))]
               [#\/
                (set! thunk
-                     (λ ()
-                       (when (and (= t ts) (try-complete/))
-                         (super on-char (new key-event%))
-                         (auto-complete))))]
+                     (cons
+                      t
+                      (λ ()
+                        (when (and (= t ts) (try-complete/))
+                          (super on-char (new key-event%))
+                          (auto-complete)))))]
               [_ (set! thunk #f)])))
 
         (define/augment (after-set-position)
