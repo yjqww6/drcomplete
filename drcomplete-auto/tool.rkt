@@ -63,19 +63,16 @@
               [(or (and (? char?) (? char-alphabetic?)) #\- #\: #\+
                    #\*)
                (set! thunk
-                     (cons
+                     (list*
                       t
                       (λ ()
                         (when (and (= t ts) (try-complete))
                           (auto-complete)))))]
               [#\/
-               (set! thunk
-                     (cons
-                      t
-                      (λ ()
-                        (when (and (= t ts) (try-complete/))
-                          (super on-char (new key-event%))
-                          (auto-complete)))))]
+               (set! thunk #f)
+               (when (try-complete/)
+                 (super on-char (new key-event%))
+                 (auto-complete))]
               [_ (set! thunk #f)])))
 
         (define/augment (after-set-position)
