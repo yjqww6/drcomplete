@@ -27,52 +27,55 @@
         (define thunk #f)
         (define ts 0)
 
-        (define thr
-          (thread
-           (λ ()
-             (with-handlers ([exn:break? void])
-               (let loop ()
-                 (sleep 0.1)
-                 (when (and thunk
-                            (= (car thunk) ts)
-                            (> (- (current-milliseconds) ts) 0.6))
-                   (queue-callback (cdr thunk))
-                   (set! thunk #f)
-                   (sleep 0.6))
-                 (loop))))))
+        (define timer
+          (new timer%
+               [notify-callback 
+                (λ ()
+                  (when (and thunk
+                             (= (car thunk) ts)
+                             (>= (- (current-milliseconds) ts) 500))
+                    ((cdr thunk))
+                    (set! thunk #f)))]
+               [interval 100]))
 
         (define/augment (on-close)
-          (break-thread thr)
+          (send timer stop)
           (inner (void) on-close))
         
         (define/override (on-char event)
           (define t (current-milliseconds))
-          (set! ts t)
-          (when (match (send event get-key-code)
+          (define key-code (send event get-key-code))
+          
+          (unless (eq? key-code 'release)
+            (set! ts t))
+          
+          (when (match key-code
                   [(or 'shift 'rshift) #f]
                   [_ #t])
             (dynamic-wind
              (λ () (set! on-char? #t))
              (λ () (super on-char event))
              (λ () (set! on-char? #f))))
+          
           (when (and (preferences:get 'drcomplete:auto-completion)
                      (not (send event get-alt-down))
                      (not (send event get-control-down))
                      (not (send event get-meta-down)))
-            (match (send event get-key-code)
+            (match key-code
               [(or (and (? char?) (? char-alphabetic?)) #\- #\: #\+
                    #\*)
                (set! thunk
                      (list*
                       t
                       (λ ()
-                        (when (and (= t ts) (try-complete))
+                        (when (try-complete)
                           (auto-complete)))))]
               [#\/
                (set! thunk #f)
                (when (try-complete/)
                  (super on-char (new key-event%))
                  (auto-complete))]
+              ['release (void)]
               [_ (set! thunk #f)])))
 
         (define/augment (after-set-position)
