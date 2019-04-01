@@ -33,9 +33,9 @@
     [(#%plain-module-begin ?module-level-form ...)
      (walk* #'(?module-level-form ...) phase)]
     [(module _ _ ?plain)
-     (walk* #'?plain 0)]
+     (walk #'?plain 0)]
     [(module* _ _ ?plain)
-     (walk* #'?plain 0)]
+     (walk #'?plain 0)]
     [(begin ?expr ...)
      (walk* #'(?expr ...) phase)]
     [(begin0 ?expr ...)
