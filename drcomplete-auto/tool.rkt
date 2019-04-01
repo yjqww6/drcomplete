@@ -26,20 +26,26 @@
 
         (define thunk #f)
         (define ts 0)
-
+        
         (define timer
           (new timer%
                [notify-callback 
                 (λ ()
                   (when (and thunk
                              (= (car thunk) ts)
-                             (>= (- (current-milliseconds) ts) 500))
+                             (>= (- (current-milliseconds) ts) 300))
                     ((cdr thunk))
-                    (set! thunk #f)))]
-               [interval 100]))
+                    (set! thunk #f)))]))
+
+        (define/private (start-timer)
+          (send timer start 100))
+        
+        (define/private (stop-timer)
+          (send timer stop)
+          (set! thunk #f))
 
         (define/augment (on-close)
-          (send timer stop)
+          (stop-timer)
           (inner (void) on-close))
         
         (define/override (on-char event)
@@ -69,14 +75,15 @@
                       t
                       (λ ()
                         (when (try-complete)
-                          (auto-complete)))))]
+                          (auto-complete)))))
+               (start-timer)]
               [#\/
-               (set! thunk #f)
+               (stop-timer)
                (when (try-complete/)
                  (super on-char (new key-event%))
                  (auto-complete))]
               ['release (void)]
-              [_ (set! thunk #f)])))
+              [_ (stop-timer)])))
 
         (define/augment (after-set-position)
           (when (not on-char?)
