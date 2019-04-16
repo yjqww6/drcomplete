@@ -4,7 +4,7 @@
                       "drcomplete-base"))
 (define build-deps '("rackunit-lib"))
 (define pkg-desc "auto complete for required identifiers")
-(define version "0.1")
+(define version "0.2")
 (define pkg-authors '(yjqww6))
 
 
