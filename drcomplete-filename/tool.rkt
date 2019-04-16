@@ -1,5 +1,6 @@
 #lang racket
 (require drracket/tool racket/gui framework srfi/2)
+(require drcomplete-base)
 (provide tool@)
 
 (require "private/main.rkt" "interface.rkt")
@@ -8,7 +9,6 @@
   (unit
     (import drracket:tool^)
     (export drracket:tool-exports^)
-    (define phase1 void)
     (define phase2 void)
     
     (define fc-mixin
@@ -42,8 +42,9 @@
         (define/public (drcomplete:path-completions [pos (get-start-position)])
           (and-let*
            ([str (check-path pos)])
-           (parameterize ([current-directory (drcomplete:get-dir)])
-             (get-completions str))))
+           (list->set
+            (parameterize ([current-directory (drcomplete:get-dir)])
+              (get-completions str)))))
         
         (define/override (get-all-words)
           (or
@@ -77,6 +78,8 @@
           (inner #f after-many-evals))
         
         (super-new)))
-    
-    (drracket:get/extend:extend-definitions-text (compose def-mixin fc-mixin))
-    (drracket:get/extend:extend-interactions-text (compose rep-mixin fc-mixin))))
+
+    (define (phase1)
+      (register-drcomplete-plugin
+       #:def (compose def-mixin fc-mixin) #:def-rank 9
+       #:int (compose rep-mixin fc-mixin) #:int-rank 9))))

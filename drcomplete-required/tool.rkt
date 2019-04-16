@@ -1,5 +1,6 @@
 #lang racket
-(require drracket/tool racket/gui framework racket/runtime-path)
+(require drracket/tool racket/gui framework racket/runtime-path
+         drcomplete-base)
 (provide tool@)
 
 
@@ -9,7 +10,7 @@
   (unit
     (import drracket:tool^)
     (export drracket:tool-exports^)
-    (define phase1 void)
+    (define phase2 void)
 
     (define-local-member-name set-required-identifiers)
     
@@ -17,10 +18,10 @@
       (mixin (racket:text<%> text:autocomplete<%>) ()
         (super-new)
 
-        (define required '())
+        (define required (set))
 
         (define/public (set-required-identifiers ls)
-          (set! required ls))
+          (set! required (list->set ls)))
 
         (define/override (get-all-words)
           required)
@@ -35,7 +36,7 @@
          (send (send (send t get-tab) get-ints)
                set-required-identifiers v))))
 
-    (define (phase2)
-      (drracket:get/extend:extend-interactions-text rc-mixin #f)
-      (drracket:get/extend:extend-definitions-text rc-mixin #f))
+    (define (phase1)
+      (register-drcomplete-plugin
+       #:def rc-mixin #:def-rank 0 #:int rc-mixin #:int-rank 0))
     ))
