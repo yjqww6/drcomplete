@@ -1,6 +1,7 @@
 #lang racket
 (require drracket/tool racket/gui framework racket/runtime-path
-         syntax-color/module-lexer)
+         syntax-color/module-lexer
+         drcomplete-base)
 (provide tool@)
 
 (define (symbols in)
@@ -27,13 +28,13 @@
       (mixin (racket:text<%> text:autocomplete<%>) ()
         (super-new)
 
-        (define user-defined '())
+        (define user-defined (set))
 
         (define/public (set-user-defined-identifiers ls)
-          (set! user-defined ls))
+          (set! user-defined (list->set ls)))
 
         (define/override (get-all-words)
-          (append user-defined (super get-all-words)))
+          (set-union user-defined (super get-all-words)))
         ))
 
     (define def-mixin
@@ -42,11 +43,10 @@
         (super-new)
 
         (define/override (get-all-words)
-          (set->list
-           (set-union
-            (set-remove (symbols (open-input-string (get-text)))
-                        (get-word-at (get-start-position)))
-            (list->set (super get-all-words)))))))
+          (set-union
+           (set-remove (symbols (open-input-string (get-text)))
+                       (get-word-at (get-start-position)))
+           (super get-all-words)))))
 
     (define rep-mixin
       (mixin (drracket:rep:text<%> text:autocomplete<%>) ()
@@ -56,10 +56,9 @@
         (define/override (get-all-words)
           (define defs (get-definitions-text))
           (if (is-a? defs drracket:unit:definitions-text<%>)
-              (set->list
-               (set-union
-                (symbols (open-input-string (send defs get-text)))
-                (list->set (super get-all-words))))
+              (set-union
+               (symbols (open-input-string (send defs get-text)))
+               (super get-all-words))
               (super get-all-words)))))
 
     
@@ -72,6 +71,7 @@
                set-user-defined-identifiers v))))
 
     (define (phase1)
-      (drracket:get/extend:extend-interactions-text (compose rep-mixin udc-mixin) #f)
-      (drracket:get/extend:extend-definitions-text (compose def-mixin udc-mixin) #f))
+      (register-drcomplete-plugin
+       #:def (compose def-mixin udc-mixin)
+       #:int (compose rep-mixin udc-mixin)))
     ))

@@ -1,5 +1,5 @@
 #lang racket
-(require drracket/tool racket/gui framework)
+(require drracket/tool racket/gui framework drcomplete-base)
 (provide tool@)
 
 (require "private/main.rkt")
@@ -19,15 +19,15 @@
         (inherit get-word-at get-start-position)
         (define/override (get-all-words)
           (define col (collections))
-          (append
-           (for/list ([(k v) (in-hash col)])
+          (set-union
+           (for/set ([(k v) (in-hash col)])
              k)
-           (set->list (get-completions (get-word-at (get-start-position)) col))
+           (get-completions (get-word-at (get-start-position)) col)
            (super get-all-words)))
         
         (super-new)
         ))
 
     (define (phase1)
-      (drracket:get/extend:extend-definitions-text fc-mixin #f)
-      (drracket:get/extend:extend-interactions-text fc-mixin #f))))
+      (register-drcomplete-plugin
+       #:def fc-mixin #:int fc-mixin))))
