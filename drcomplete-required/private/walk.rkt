@@ -1,6 +1,7 @@
 #lang racket/base
 (require racket/bool racket/set racket/sequence
-         (for-syntax racket/base) syntax/kerncase)
+         (for-syntax racket/base) syntax/kerncase
+         "methods-built.rkt")
 (provide walk-module)
 
 (define-syntax (for/union stx)
@@ -84,6 +85,7 @@
        (with-datum ([mod #'?raw-module-path]
                     [id #'?id])
          (when (visible? #'?id)
+           (set-add! declared-modules mod)
            (set-add! ids id)))]
       [?raw-module-path
        (when (visible? #'?raw-module-path)
@@ -201,5 +203,8 @@
          (define e (foldl (λ (v s) (set-remove s v)) (get-exports (cadr jm) (car jm)) (cdddr jm)))
          (for ([id (in-set e)])
            (set-add! ids (string->symbol (string-append (symbol->string (caddr jm))
-                                                        (symbol->string id)))))))])
+                                                        (symbol->string id))))))
+       (for ([mod (in-set declared-modules)])
+         (set-union! ids (list->set (hash-ref table mod (λ () '())))))
+       )])
   ids)

@@ -35,7 +35,7 @@
 
   (check-member '(module a racket/base
                    (require racket/gui))
-                frame%)
+                frame% stretchable-width)
 
   (check-member '(module a racket/base
                    (module b racket/base

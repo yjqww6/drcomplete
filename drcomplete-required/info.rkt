@@ -1,7 +1,7 @@
 #lang info
 (define collection "drcomplete-required")
 (define deps '("base" "drracket" "drracket-plugin-lib" "gui-lib" "srfi-lib"
-                      "drcomplete-base"))
+                      "drcomplete-base" "scribble-lib" "racket-index"))
 (define build-deps '("rackunit-lib"))
 (define pkg-desc "auto complete for required identifiers")
 (define version "0.2")
