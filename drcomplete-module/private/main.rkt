@@ -56,6 +56,7 @@
                        s
                        (join-str (path->string f)))]
                      [else s]))]
+                [(cons "" _) s]
                 [(cons p path*)
                  (define more-dir (build-path dir p))
                  (if (directory-exists? more-dir)
