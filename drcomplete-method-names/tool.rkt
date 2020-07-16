@@ -16,8 +16,8 @@
 
         (define method-names (set))
 
-        (define/public (set-method-names ls)
-          (set! method-names (list->set ls)))
+        (define/public (set-method-names s)
+          (set! method-names s))
 
         (define/override (get-all-words)
           (set-union method-names (super get-all-words)))
