@@ -43,4 +43,4 @@ For `drcomplete-filename` and `drcomplete-module`, you would need to re-triger a
 
 `drcomplete-auto` enables automatic triggering of autocompletion, you can enable/disable it in `Edit|Enable/Disable Automatic AutoCompletion`. (contributed by @Syntacticlosure)
 
-`drcomplete-method-names` completes method names available from classes and interfaces(mixins are ignored, unfortunately). And this table will be updated after the program run. This package is *experimental*  currently, and not included by `drcomplete ` package.
+`drcomplete-method-names` completes method names available from classes and interfaces(mixins are ignored, unfortunately). And this table will be updated after the program run. This package is *experimental*  currently, and not included by `drcomplete` package.
