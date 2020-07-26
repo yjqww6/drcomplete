@@ -42,7 +42,7 @@
       [(submod "." _ ...) #f]
       [(submod ".." _ ...) #f]
       [(submod (quote _) _ ...) #f]
-      [(quote _) #f]
+      [(quote x) (module-predefined? r)]
       [_ #t]))
 
   (define (phaseless-spec spec just)
