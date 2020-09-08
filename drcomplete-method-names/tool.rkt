@@ -25,42 +25,34 @@
 
     (define (rep-mixin %)
       (class %
-        (inherit get-definitions-text run-in-evaluation-thread
-                 get-user-namespace set-method-names)
+        (inherit get-definitions-text set-method-names)
         (super-new)
 
-        (define first-run? #f)
-        
-        (define/augment (after-many-evals)
-          (cond
-            [(drracket:rep:module-language-initial-run)
-             (set! first-run? #t)]
-            [first-run?
-             (set! first-run? #f)
-             (run-in-evaluation-thread
-              (λ ()
-                (define ns (current-namespace))
-                (define (->inteface c)
-                  (cond
-                    [(interface? c) c]
-                    [(class? c) (class->interface c)]
-                    [else #f]))
-                (when ns
-                  (define syms
-                    (for/fold ([s (set)])
-                              ([sym (in-list (namespace-mapped-symbols ns))])
-                      (define val (namespace-variable-value sym #t (λ () #f) ns))
-                      (cond
-                        [(->inteface val)
-                         =>
-                         (λ (<%>)
-                           (define mn (interface->method-names <%>))
-                           (set-union s (list->set (map symbol->string mn))))]
-                        [else s])))
-                  (set-method-names syms)
-                  (send (get-definitions-text) set-method-names syms))))]
-            [else (void)])
-          (inner (void) after-many-evals))))
+        (define/override (evaluate-from-port port complete-program? cleanup)
+          (super evaluate-from-port port complete-program?
+                 (if complete-program?
+                     (λ ()
+                       (cleanup)
+                       (define ns (current-namespace))
+                       (define (->inteface c)
+                         (cond
+                           [(interface? c) c]
+                           [(class? c) (class->interface c)]
+                           [else #f]))
+                       (define syms
+                         (for/fold ([s (set)])
+                                   ([sym (in-list (namespace-mapped-symbols ns))])
+                           (define val (namespace-variable-value sym #t (λ () #f) ns))
+                           (cond
+                             [(->inteface val)
+                              =>
+                              (λ (<%>)
+                                (define mn (interface->method-names <%>))
+                                (set-union s (list->set (map symbol->string mn))))]
+                             [else s])))
+                       (set-method-names syms)
+                       (send (get-definitions-text) set-method-names syms))
+                     cleanup)))))
 
     (define (phase1)
       (register-drcomplete-plugin
