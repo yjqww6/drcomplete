@@ -87,4 +87,9 @@
                    [(a) #f]
                    [(b . c) #f]))
               a b c)
+
+  (check-same '(module a racket
+                 (begin-for-syntax (module* a #f
+                                     (struct A (a)))))
+              A A-a A? struct:A)
   )
