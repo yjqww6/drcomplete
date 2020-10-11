@@ -7,14 +7,13 @@
 (module+ test
   (require (for-syntax syntax/parse) rackunit)
 
-  (define ns (make-base-namespace))
-
   (define-check (check-in module-form proc)
-    (define fpe (parameterize ([current-namespace ns])
-                  (expand module-form)))
-    (define imports (walk-module fpe))
-    (unless (proc imports)
-      (fail-check)))
+    (define ns (make-base-namespace))
+    (parameterize ([current-namespace ns])
+      (define fpe (expand module-form))
+      (define imports (walk-module fpe))
+      (unless (proc imports)
+        (fail-check))))
 
   (define-syntax (check-member stx)
     (syntax-parse stx
@@ -97,4 +96,21 @@
 
                    (test1)
                    (test2))
-                #:not (p1:set? set?) p2:set? set->list))
+                #:not (p1:set? set?) p2:set? set->list)
+  (check-member '(module a racket
+                   (define module 1)
+
+                   (begin-for-syntax
+                     (module a racket/base
+                       (require racket/syntax))))
+                #:not () format-id)
+  (check-member '(module a racket
+                   (begin-for-syntax
+                     (require racket/syntax)))
+                #:not () format-id)
+  (check-member '(module a racket
+                   (begin-for-syntax
+                     (module* a #f
+                       (require racket/syntax))))
+                #:not () format-id)
+  )

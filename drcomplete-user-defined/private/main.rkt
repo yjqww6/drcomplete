@@ -25,19 +25,17 @@
          (seteq))]
     [_ (seteq)]))
 
-(define (walk stx [phase 0])
+(define (walk stx [phase (namespace-base-phase)])
   (set-union
    (kernel-syntax-case/phase
     stx phase
     [(#%expression ?expr) (walk #'?expr phase)]
-    [(#%plain-module-begin ?module-level-form ...)
+    [(module _ _ (_ ?module-level-form ...))
+     (walk* #'(?module-level-form ...) 0)]
+    [(module* _ #f (_ ?module-level-form ...))
      (walk* #'(?module-level-form ...) phase)]
-    [(module _ _ ?plain)
-     (walk #'?plain 0)]
-    [(module* _ #f ?plain)
-     (walk #'?plain phase)]
-    [(module* _ _ ?plain)
-     (walk #'?plain 0)]
+    [(module* _ _ (_ ?module-level-form ...))
+     (walk* #'(?module-level-form ...) 0)]
     [(begin ?expr ...)
      (walk* #'(?expr ...) phase)]
     [(begin0 ?expr ...)

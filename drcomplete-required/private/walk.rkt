@@ -140,34 +140,35 @@
       [?phaseless-spec
        (phaseless-spec #'?phaseless-spec #f)]))
   
-  (define (walk form)
-    (kernel-syntax-case form #f
-      [(module ?id ?path (#%plain-module-begin ?form ...))
+  (define (walk form phase)
+    (kernel-syntax-case/phase form phase
+      [(module ?id ?path (_ ?form ...))
        (begin
          (phaseless-spec #'?path #f)
-         (walk* #'(?form ...)))]
-      [(module* ?id ?path (#%plain-module-begin ?form ...))
+         (walk* #'(?form ...) 0))]
+      [(module* ?id #f (_ ?form ...))
+       (walk* #'(?form ...) phase)]
+      [(module* ?id ?path (_ ?form ...))
        (begin
-         (when (syntax-e #'?path)
-           (phaseless-spec #'?path #f))
-         (walk* #'(?form ...)))]
+         (phaseless-spec #'?path #f)
+         (walk* #'(?form ...) 0))]
       [(#%require ?spec ...)
        (for ([spec (in-syntax #'(?spec ...))])
          (raw-require-spec spec))]
       [(begin ?form ...)
-       (walk* #'(?form ...))]
+       (walk* #'(?form ...) phase)]
       [(begin-for-syntax ?form ...)
-       (walk* #'(?form ...))]
+       (walk* #'(?form ...) (add1 phase))]
       [_ (void)]))
 
-  (define (walk* form*)
-    (for-each (λ (s) (walk s)) (syntax->list form*)))
+  (define (walk* form* phase)
+    (for-each (λ (s) (walk s phase)) (syntax->list form*)))
     
   (kernel-syntax-case fpe #f
     [(module ?id ?path (#%plain-module-begin ?form ...))
      (begin
        (phaseless-spec #'?path #f)
-       (walk* #'(?form ...))
+       (walk* #'(?form ...) (namespace-base-phase))
          
        (define (get-exports mod just)
          (define (filter-exports exports)
