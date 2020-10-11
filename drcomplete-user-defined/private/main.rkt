@@ -34,6 +34,8 @@
      (walk* #'(?module-level-form ...) phase)]
     [(module _ _ ?plain)
      (walk #'?plain 0)]
+    [(module* _ #f ?plain)
+     (walk #'?plain phase)]
     [(module* _ _ ?plain)
      (walk #'?plain 0)]
     [(begin ?expr ...)
