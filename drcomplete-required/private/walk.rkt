@@ -96,14 +96,20 @@
       (apply f s args)))
     
   (define (raw-require-spec spec)
+    (define (adjust just shift)
+      (cond
+        ; all phases(#t) or label phase(#f)
+        [(boolean? just) just]
+        [(not shift) #f]
+        [else (- just shift)]))
+    
     (define (maybe-just-meta spec)
       (syntax-case* spec (just-meta) sym=?
         [(just-meta ?n ?phaseless-spec* ...)
          (let ([n (syntax-e #'?n)])
-           (when n
-             (each phaseless-spec #'(?phaseless-spec* ...) n)))]
+           (each phaseless-spec #'(?phaseless-spec* ...) n))]
         [?phaseless-spec
-         (phaseless-spec #'?phaseless-spec #f)]))
+         (phaseless-spec #'?phaseless-spec #t)]))
 
     (define (maybe-shift spec just)
       (syntax-case* spec
@@ -112,13 +118,14 @@
         [(for-meta ?level ?phaseless-spec ...)
          (let ([level (syntax-e #'?level)])
            (each phaseless-spec #'(?phaseless-spec ...)
-                 (- just (or level 0))))]
+                 (adjust just level)))]
         [(for-syntax ?phaseless-spec ...)
-         (each phaseless-spec #'(?phaseless-spec ...) (- just 1))]
+         (each phaseless-spec #'(?phaseless-spec ...) (adjust just 1))]
         [(for-template ?phaseless-spec ...)
-         (each phaseless-spec #'(?phaseless-spec ...) (- just -1))]
+         (each phaseless-spec #'(?phaseless-spec ...) (adjust just -1))]
         [(for-label ?phaseless-spec ...)
-         (each phaseless-spec #'(?phaseless-spec ...) just)]
+         (when (boolean? just)
+           (each phaseless-spec #'(?phaseless-spec ...) #f))]
         [?phaseless-spec
          (phaseless-spec #'?phaseless-spec just)]))
     
@@ -135,10 +142,9 @@
        (each maybe-just-meta #'(?phaseless-spec ...))]
       [(just-meta ?level ?raw-require-spec ...)
        (let ([level (syntax-e #'?level)])
-         (when level
-           (each maybe-shift #'(?raw-require-spec ...) level)))]
+         (each maybe-shift #'(?raw-require-spec ...) level))]
       [?phaseless-spec
-       (phaseless-spec #'?phaseless-spec #f)]))
+       (phaseless-spec #'?phaseless-spec #t)]))
   
   (define (walk form phase)
     (kernel-syntax-case/phase form phase
@@ -167,14 +173,15 @@
   (kernel-syntax-case fpe #f
     [(module ?id ?path (#%plain-module-begin ?form ...))
      (begin
-       (phaseless-spec #'?path #f)
+       (phaseless-spec #'?path #t)
        (walk* #'(?form ...) (namespace-base-phase))
          
        (define (get-exports mod just)
          (define (filter-exports exports)
            (cond
-             [(not just) (for/union ([p (in-list exports)])
-                           (list->set (map car (cdr p))))]
+             [(eq? just #t)
+              (for/union ([p (in-list exports)])
+                (list->set (map car (cdr p))))]
              [(assq just exports)
               =>
               (λ (p)
@@ -184,7 +191,7 @@
            (set-union (filter-exports a) (filter-exports b))))
 
        (for ([mod (in-set declared-modules)])
-         ((current-module-name-resolver) mod #f #f #t))
+         (module-declared? mod #t))
          
        (for ([jm (in-set alls)])
          (for ([id (in-set (get-exports (cdr jm) (car jm)))])
