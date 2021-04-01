@@ -7,18 +7,24 @@
 (module+ test
   (require (for-syntax syntax/parse) rackunit)
 
-  (define-check (check-in module-form proc)
+  (define (get-imports module-form prologue)
     (define ns (make-base-namespace))
     (parameterize ([current-namespace ns])
+      (when prologue
+        (prologue))
       (define fpe (expand module-form))
-      (define imports (walk-module fpe))
-      (unless (proc imports)
-        (fail-check))))
+      (walk-module fpe)))
+
+  (define-check (check-in module-form proc prologue)
+    (unless (proc (get-imports module-form prologue))
+      (fail-check)))
 
   (define-syntax (check-member stx)
     (syntax-parse stx
       [(_ module-form (~optional (~seq #:not (e ...))
                                  #:defaults ([(e 1) '()]))
+          (~optional (~seq #:prologue prologue)
+                     #:defaults ([prologue #'#f]))
           id ...)
        (syntax/loc stx
          (check-in module-form
@@ -27,7 +33,8 @@
                       (set=?
                        (set-intersect (set 'e ...) imports)
                        (set))
-                      (subset? (set 'id ...) imports)))))]))
+                      (subset? (set 'id ...) imports)))
+                   prologue))]))
 
   (check-member '(module a racket/base)
                 call/cc)
@@ -113,4 +120,17 @@
                      (module* a #f
                        (require racket/syntax))))
                 #:not () format-id)
+
+  (check-member '(module a racket
+                   (#%require (just-meta #f "b.rkt")))
+                #:prologue
+                (λ ()
+                  (parameterize ([current-module-declare-name
+                                  (make-resolved-module-path
+                                   (build-path (current-directory) "b.rkt"))])
+                    (eval
+                     '(module b racket/base
+                        (require (for-label syntax/stx))
+                        (provide (for-label stx-pair?))))))
+                stx-pair?)
   )
