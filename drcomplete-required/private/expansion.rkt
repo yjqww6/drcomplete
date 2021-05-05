@@ -9,7 +9,7 @@
      (with-handlers ([exn?
                       (λ (e)
                         (log-message
-                         (current-logger) 'error 'drcomplete
+                         (current-logger) 'info 'drcomplete
                          (exn->string e) (current-continuation-marks))
                         #f)])
        (for/list ([s (in-set (walk-module v))])
