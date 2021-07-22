@@ -158,25 +158,26 @@
        (phaseless-spec #'?phaseless-spec #t)]))
   
   (define (walk form phase)
-    (kernel-syntax-case/phase form phase
-                              [(module ?id ?path (_ ?form ...))
-                               (begin
-                                 (spaceless-spec #'?path #f)
-                                 (walk* #'(?form ...) 0))]
-                              [(module* ?id #f (_ ?form ...))
-                               (walk* #'(?form ...) phase)]
-                              [(module* ?id ?path (_ ?form ...))
-                               (begin
-                                 (spaceless-spec #'?path #f)
-                                 (walk* #'(?form ...) 0))]
-                              [(#%require ?spec ...)
-                               (for ([spec (in-syntax #'(?spec ...))])
-                                 (raw-require-spec spec))]
-                              [(begin ?form ...)
-                               (walk* #'(?form ...) phase)]
-                              [(begin-for-syntax ?form ...)
-                               (walk* #'(?form ...) (add1 phase))]
-                              [_ (void)]))
+    (kernel-syntax-case/phase
+     form phase
+     [(module ?id ?path (_ ?form ...))
+      (begin
+        (spaceless-spec #'?path #f)
+        (walk* #'(?form ...) 0))]
+     [(module* ?id #f (_ ?form ...))
+      (walk* #'(?form ...) phase)]
+     [(module* ?id ?path (_ ?form ...))
+      (begin
+        (spaceless-spec #'?path #f)
+        (walk* #'(?form ...) 0))]
+     [(#%require ?spec ...)
+      (for ([spec (in-syntax #'(?spec ...))])
+        (raw-require-spec spec))]
+     [(begin ?form ...)
+      (walk* #'(?form ...) phase)]
+     [(begin-for-syntax ?form ...)
+      (walk* #'(?form ...) (add1 phase))]
+     [_ (void)]))
 
   (define (walk* form* phase)
     (for-each (λ (s) (walk s phase)) (syntax->list form*)))
