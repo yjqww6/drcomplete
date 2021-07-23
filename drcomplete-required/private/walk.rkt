@@ -95,10 +95,10 @@
     (syntax-case* spec (for-space just-space) sym=?
       [(just-space #f ?phaseless-spec* ...)
        (each phaseless-spec #'(?phaseless-spec* ...) just-phase)]
-      [(just-space ?space ?phaseless-spec* ...)
-       (each phaseless-spec #'(?phaseless-spec* ...) (cons just-phase (syntax-e #'?space)))]
-      [(for-space ?space ?spaceless-spec* ...)
-       (each spaceless-spec #'(?spaceless-spec* ...) just-phase)]
+      [(just-space ?space ?spaceless-spec* ...)
+       (each spaceless-spec #'(?spaceless-spec* ...) (cons just-phase (syntax-e #'?space)))]
+      [(for-space ?space ?phaseless-spec* ...)
+       (each phaseless-spec #'(?phaseless-spec* ...) just-phase)]
       [?spaceless-spec
        (spaceless-spec #'?spaceless-spec just-phase)]))
 
