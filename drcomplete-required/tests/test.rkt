@@ -5,7 +5,7 @@
   (provide ftest))
 
 (module+ test
-  (require (for-syntax syntax/parse) rackunit)
+  (require (for-syntax syntax/parse) version/utils rackunit)
 
   (define (get-imports module-form prologue)
     (define ns (make-base-namespace))
@@ -133,4 +133,27 @@
                         (require (for-label syntax/stx))
                         (provide (for-label stx-pair?))))))
                 stx-pair?)
+
+  (when (version<=? "8.2.0.4" (version))
+    (check-member '(module a racket/base
+                     (#%require (just-space spaced "b.rkt")))
+                  #:not (asd)
+                  #:prologue
+                  (λ ()
+                    (parameterize ([current-module-declare-name
+                                    (make-resolved-module-path
+                                     (build-path (current-directory) "b.rkt"))])
+                      (eval
+                       '(module a racket/base
+                          (require (for-syntax racket/base))
+                          (provide (for-space spaced pri) asd)
+
+                          (define-syntax spaced
+                            (λ (stx)
+                              (syntax-case stx ()
+                                [(_ form)
+                                 ((make-interned-syntax-introducer 'spaced) #'form)])))
+                          (spaced (define pri 2))
+                          (define asd 1)))))
+                  pri))
   )

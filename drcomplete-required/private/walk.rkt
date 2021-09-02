@@ -45,7 +45,7 @@
       [(quote x) (module-predefined? r)]
       [_ #t]))
 
-  (define (phaseless-spec spec just)
+  (define (spaceless-spec spec just)
     (define-syntax-rule (with-datum ([id0 exp0] [id exp] ...) body ...)
       (let ([id0 (syntax->datum exp0)])
         (when (ext-module-path? id0)
@@ -90,6 +90,17 @@
          (with-datum ([mod #'?raw-module-path])
            (set-add! declared-modules mod)
            (set-add! alls (cons just mod))))]))
+
+  (define (phaseless-spec spec just-phase)
+    (syntax-case* spec (for-space just-space) sym=?
+      [(just-space #f ?phaseless-spec* ...)
+       (each phaseless-spec #'(?phaseless-spec* ...) just-phase)]
+      [(just-space ?space ?spaceless-spec* ...)
+       (each spaceless-spec #'(?spaceless-spec* ...) (cons just-phase (syntax-e #'?space)))]
+      [(for-space ?space ?phaseless-spec* ...)
+       (each phaseless-spec #'(?phaseless-spec* ...) just-phase)]
+      [?spaceless-spec
+       (spaceless-spec #'?spaceless-spec just-phase)]))
 
   (define (each f syn . args)
     (for ([s (in-syntax syn)])
@@ -147,25 +158,26 @@
        (phaseless-spec #'?phaseless-spec #t)]))
   
   (define (walk form phase)
-    (kernel-syntax-case/phase form phase
-      [(module ?id ?path (_ ?form ...))
-       (begin
-         (phaseless-spec #'?path #f)
-         (walk* #'(?form ...) 0))]
-      [(module* ?id #f (_ ?form ...))
-       (walk* #'(?form ...) phase)]
-      [(module* ?id ?path (_ ?form ...))
-       (begin
-         (phaseless-spec #'?path #f)
-         (walk* #'(?form ...) 0))]
-      [(#%require ?spec ...)
-       (for ([spec (in-syntax #'(?spec ...))])
-         (raw-require-spec spec))]
-      [(begin ?form ...)
-       (walk* #'(?form ...) phase)]
-      [(begin-for-syntax ?form ...)
-       (walk* #'(?form ...) (add1 phase))]
-      [_ (void)]))
+    (kernel-syntax-case/phase
+     form phase
+     [(module ?id ?path (_ ?form ...))
+      (begin
+        (spaceless-spec #'?path #f)
+        (walk* #'(?form ...) 0))]
+     [(module* ?id #f (_ ?form ...))
+      (walk* #'(?form ...) phase)]
+     [(module* ?id ?path (_ ?form ...))
+      (begin
+        (spaceless-spec #'?path #f)
+        (walk* #'(?form ...) 0))]
+     [(#%require ?spec ...)
+      (for ([spec (in-syntax #'(?spec ...))])
+        (raw-require-spec spec))]
+     [(begin ?form ...)
+      (walk* #'(?form ...) phase)]
+     [(begin-for-syntax ?form ...)
+      (walk* #'(?form ...) (add1 phase))]
+     [_ (void)]))
 
   (define (walk* form* phase)
     (for-each (λ (s) (walk s phase)) (syntax->list form*)))
@@ -173,20 +185,30 @@
   (kernel-syntax-case fpe #f
     [(module ?id ?path (#%plain-module-begin ?form ...))
      (begin
-       (phaseless-spec #'?path #t)
+       (spaceless-spec #'?path #t)
        (walk* #'(?form ...) (namespace-base-phase))
          
        (define (get-exports mod just)
-         (define (filter-exports exports)
+         (define just-phase
            (cond
-             [(eq? just #t)
-              (for/union ([p (in-list exports)])
-                (list->set (map car (cdr p))))]
-             [(assq just exports)
-              =>
-              (λ (p)
-                (list->set (map car (cdr p))))]
-             [else (set)]))
+             [(pair? just) (car just)]
+             [else just]))
+         (define just-space
+           (cond
+             [(pair? just) (cdr just)]
+             [else #f]))
+         (define (ok? p+s)
+           (cond
+             [(pair? p+s) (and (or (eq? just-phase #t) (eq? (car p+s) just-phase))
+                               (or (not just-space) (eq? (cdr p+s) just-space)))]
+             [else
+              (and (not just-space)
+                   (or (eq? just-phase #t) (eq? p+s just-phase)))]))
+         (define (filter-exports exports)
+           (for*/set ([p (in-list exports)]
+                      #:when (ok? (car p))
+                      [id (in-list (map car (cdr p)))])
+             id))
          (let-values ([(a b) (module->exports mod)])
            (set-union (filter-exports a) (filter-exports b))))
 
