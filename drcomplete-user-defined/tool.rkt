@@ -9,8 +9,8 @@
     (define-values (str type _1 _2 _3 _4 new-mode)
       (module-lexer in 0 mode))
     (cond
-      [(eof-object? str) s]
-      [(eq? type 'symbol)
+      [(or (eof-object? str) (eq? type 'eof)) s]
+      [(and (eq? type 'symbol) (string? str))
        (loop new-mode (set-add s str))]
       [else (loop new-mode s)])))
 
