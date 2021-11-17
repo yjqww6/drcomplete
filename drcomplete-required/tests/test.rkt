@@ -156,4 +156,15 @@
                           (spaced (define pri 2))
                           (define asd 1)))))
                   pri))
+  (when (version<=? "8.3.0.8" (version))
+    (check-member '(module a racket/base
+                     (require (for-syntax racket/base racket/syntax))
+
+                     (define-syntax (bind stx)
+                       (syntax-case stx ()
+                         [(_ id)
+                          (with-syntax ([pid (format-id #'id "~a-portal" #'id)])
+                            #'(#%require (portal pid (1 2))))]))
+                     (bind test))
+                  test-portal))
   )

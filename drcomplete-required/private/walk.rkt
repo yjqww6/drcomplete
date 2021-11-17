@@ -92,13 +92,16 @@
            (set-add! alls (cons just mod))))]))
 
   (define (phaseless-spec spec just-phase)
-    (syntax-case* spec (for-space just-space) sym=?
+    (syntax-case* spec (for-space just-space portal) sym=?
       [(just-space #f ?phaseless-spec* ...)
        (each phaseless-spec #'(?phaseless-spec* ...) just-phase)]
       [(just-space ?space ?spaceless-spec* ...)
        (each spaceless-spec #'(?spaceless-spec* ...) (cons just-phase (syntax-e #'?space)))]
       [(for-space ?space ?phaseless-spec* ...)
        (each phaseless-spec #'(?phaseless-spec* ...) just-phase)]
+      [(portal id _) ; here for convenience
+       (when (visible? #'id)
+         (set-add! ids (syntax-e #'id)))]
       [?spaceless-spec
        (spaceless-spec #'?spaceless-spec just-phase)]))
 
