@@ -40,6 +40,9 @@
                       (subset? (set 'id ...) imports)))
                    prologue))]))
 
+  (check-eq? (version<=? "8.6.0.8" (version))
+             (cond-use-bound #t #:else #f))
+
   (check-member '(module a racket/base)
                 call/cc)
 
@@ -174,6 +177,7 @@
                             #'(#%require (portal pid (1 2))))]))
                      (bind test))
                   test-portal))
+
   (cond-use-bound
     (check-member '(module a racket/base
                      (module b racket/base
