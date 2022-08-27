@@ -1,6 +1,7 @@
 #lang racket/base
 (require racket/bool racket/set racket/sequence
-         (for-syntax racket/base) syntax/kerncase)
+         (for-syntax racket/base) syntax/kerncase
+         "utils.rkt")
 (provide walk-module)
 
 (define-syntax (for/union stx)
@@ -14,12 +15,6 @@
 
 (define (sym=? a b)
   (symbol=? (syntax-e a) (syntax-e b)))
-
-(define (visible? id)
-  (for/and ([scope (in-list
-                    (hash-ref (syntax-debug-info id)
-                              'context (λ () '())))])
-    (not (eq? 'macro (vector-ref scope 1)))))
 
 (define (walk-module fpe)
 
