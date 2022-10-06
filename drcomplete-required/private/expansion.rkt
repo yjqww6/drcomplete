@@ -1,7 +1,11 @@
 #lang racket/base
 
-(require "walk.rkt" racket/set racket/exn)
+(require "utils.rkt" racket/set racket/exn)
 (provide go)
+(cond-use-bound
+ (require "walk-bound.rkt")
+ #:else
+ (require "walk.rkt"))
 (define (go v path src cust)
   (cond
     [(exn? v) #f]

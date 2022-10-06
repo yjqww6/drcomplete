@@ -1,5 +1,9 @@
 #lang racket
-(require "../private/walk.rkt")
+(require "../private/utils.rkt")
+(cond-use-bound
+ (require "../private/walk-bound.rkt")
+ #:else
+ (require "../private/walk.rkt"))
 (module a racket/base
   (define ftest #f)
   (provide ftest))
@@ -35,6 +39,9 @@
                        (set))
                       (subset? (set 'id ...) imports)))
                    prologue))]))
+
+  (check-eq? (version<=? "8.6.0.8" (version))
+             (cond-use-bound #t #:else #f))
 
   (check-member '(module a racket/base)
                 call/cc)
@@ -134,28 +141,31 @@
                         (provide (for-label stx-pair?))))))
                 stx-pair?)
 
-  (when (version<=? "8.2.0.4" (version))
-    (check-member '(module a racket/base
-                     (#%require (just-space spaced "b.rkt")))
-                  #:not (asd)
-                  #:prologue
-                  (λ ()
-                    (parameterize ([current-module-declare-name
-                                    (make-resolved-module-path
-                                     (build-path (current-directory) "b.rkt"))])
-                      (eval
-                       '(module a racket/base
-                          (require (for-syntax racket/base))
-                          (provide (for-space spaced pri) asd)
+  (when (and (version<=? "8.2.0.4" (version)))
+    (cond-use-bound
+     (void)
+     #:else
+     (check-member '(module a racket/base
+                      (#%require (just-space spaced "b.rkt")))
+                   #:not (asd)
+                   #:prologue
+                   (λ ()
+                     (parameterize ([current-module-declare-name
+                                     (make-resolved-module-path
+                                      (build-path (current-directory) "b.rkt"))])
+                       (eval
+                        '(module a racket/base
+                           (require (for-syntax racket/base))
+                           (provide (for-space spaced pri) asd)
 
-                          (define-syntax spaced
-                            (λ (stx)
-                              (syntax-case stx ()
-                                [(_ form)
-                                 ((make-interned-syntax-introducer 'spaced) #'form)])))
-                          (spaced (define pri 2))
-                          (define asd 1)))))
-                  pri))
+                           (define-syntax spaced
+                             (λ (stx)
+                               (syntax-case stx ()
+                                 [(_ form)
+                                  ((make-interned-syntax-introducer 'spaced) #'form)])))
+                           (spaced (define pri 2))
+                           (define asd 1)))))
+                   pri)))
   (when (version<=? "8.3.0.8" (version))
     (check-member '(module a racket/base
                      (require (for-syntax racket/base racket/syntax))
@@ -167,4 +177,12 @@
                             #'(#%require (portal pid (1 2))))]))
                      (bind test))
                   test-portal))
+
+  (cond-use-bound
+    (check-member '(module a racket/base
+                     (module b racket/base
+                       (define fx 1)
+                       (provide (prefix-out b: fx)))
+                     (require 'b))
+                  b:fx))
   )
