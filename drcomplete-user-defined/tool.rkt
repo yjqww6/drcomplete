@@ -1,6 +1,7 @@
 #lang racket
 (require drracket/tool racket/gui framework racket/runtime-path
          syntax-color/module-lexer
+         syntax-color/lexer-contract
          drcomplete-base)
 (provide tool@)
 
@@ -8,11 +9,15 @@
   (let loop ([mode #f] [s (set)])
     (define-values (str type _1 _2 _3 _4 new-mode)
       (module-lexer in 0 mode))
+    (define next-mode
+      (if (dont-stop? new-mode)
+          (dont-stop-val new-mode)
+          new-mode))
     (cond
       [(or (eof-object? str) (eq? type 'eof)) s]
       [(and (eq? type 'symbol) (string? str))
-       (loop new-mode (set-add s str))]
-      [else (loop new-mode s)])))
+       (loop next-mode (set-add s str))]
+      [else (loop next-mode s)])))
 
 (define-runtime-path expansion.rkt "private/expansion.rkt")
 
