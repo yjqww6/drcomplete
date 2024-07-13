@@ -2,7 +2,8 @@
 (require drracket/tool racket/gui framework racket/runtime-path
          syntax-color/module-lexer
          syntax-color/lexer-contract
-         drcomplete-base)
+         drcomplete-base
+         racket/symbol)
 (provide tool@)
 
 (define (symbols in)
@@ -27,7 +28,7 @@
     (export drracket:tool-exports^)
     (define phase2 void)
 
-    (define-local-member-name set-user-defined-identifiers)
+    (define-local-member-name set-user-defined-identifiers repl-identifiers)
     
     (define udc-mixin
       (mixin (racket:text<%> text:autocomplete<%>) ()
@@ -55,14 +56,23 @@
 
     (define rep-mixin
       (mixin (drracket:rep:text<%> text:autocomplete<%>) ()
-        (inherit get-definitions-text)
+        (inherit get-definitions-text run-in-evaluation-thread)
         (super-new)
+        (define repl-defined (set))
+
+        (define/augment (after-many-evals)
+          (run-in-evaluation-thread
+           (λ ()
+             (set! repl-defined (for/set ([s (in-list (namespace-mapped-symbols (current-namespace)))])
+                                  (symbol->immutable-string s)))))
+          (inner (void) after-many-evals))
 
         (define/override (get-all-words)
           (define defs (get-definitions-text))
           (if (is-a? defs drracket:unit:definitions-text<%>)
               (set-union
                (symbols (open-input-string (send defs get-text)))
+               repl-defined
                (super get-all-words))
               (super get-all-words)))))
 
